@@ -1,0 +1,25 @@
+# vendor/ KESİNLİKLE hariç tutulmalı: imaj içinde Linux için composer install
+# çalışıyor, buradaki Windows kurulumu üzerine kopyalanırsa konteyner bozulur.
+vendor
+node_modules
+
+# Sırlar imaja gömülmez; değerler docker-compose environment ile geçilir.
+.env
+.env.backup
+.env.production
+
+.git
+.gitignore
+.idea
+.vscode
+.editorconfig
+
+tests
+phpunit.xml
+storage/logs/*.log
+public/build
+public/hot
+
+Dockerfile
+.dockerignore
+README.md

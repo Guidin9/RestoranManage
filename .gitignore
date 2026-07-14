@@ -1,0 +1,19 @@
+# Docker Compose ortam değişkenleri — APP_KEY ve şifreler burada, ASLA commit etmeyin.
+# Şablon olarak .env.example repoda kalır.
+.env
+
+# Alt projelerin kendi .gitignore dosyaları da var; buradakiler kök seviyesinde
+# "git add ." yapıldığında kazara eklenmeye karşı ikinci bir emniyet.
+**/vendor/
+**/node_modules/
+**/.env
+
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# Claude Code kişisel ayarları (makineye özel izinler ve yollar).
+# Ekipçe paylaşılacak ayarlar .claude/settings.json içine yazılır.
+.claude/settings.local.json

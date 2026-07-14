@@ -1,0 +1,77 @@
+# Değerler bu dosyanın yanındaki .env dosyasından okunur (.env.example'ı kopyalayın).
+# ${VAR:?...} yazımı, değişken tanımsızsa compose'u sessizce başlatmak yerine
+# anlaşılır bir hata ile durdurur.
+
+services:
+  # MySQL Veritabanı Konteyneri
+  db:
+    image: mysql:8.0
+    container_name: qrmenu_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-qr_menu}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD gerekli - .env dosyasina ekleyin}
+    ports:
+      # Sadece sunucunun kendisine açık. Publik IP'de 0.0.0.0:3306 açmak
+      # veritabanını internete açar; Azure NSG'de de 3306 kapalı olmalı.
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # Laravel Backend Konteyneri
+  backend:
+    build:
+      context: ./Qr_menu
+    container_name: qrmenu_backend
+    restart: always
+    ports:
+      - "8000:80"
+    depends_on:
+      - db
+    environment:
+      # .env imaja gömülmez (.dockerignore). Konfigürasyon buradan gelir; Laravel
+      # gerçek ortam değişkenlerini .env dosyasının üzerine yazmaz, bu yüzden
+      # buradaki değerler geçerli olur.
+      APP_NAME: ${APP_NAME:-QR Menu}
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:?APP_KEY gerekli - "php artisan key:generate --show" ile uretip .env'e ekleyin}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_URL: ${APP_URL:-http://localhost:8000}
+
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-qr_menu}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD gerekli - .env dosyasina ekleyin}
+
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      LOG_CHANNEL: stack
+
+      # Personel hesapları — StaffSeeder bu değerlerden oluşturur.
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD gerekli - .env dosyasina ekleyin}
+      CASHIER_USERNAME: ${CASHIER_USERNAME:-kasa}
+      CASHIER_PASSWORD: ${CASHIER_PASSWORD:?CASHIER_PASSWORD gerekli - .env dosyasina ekleyin}
+
+  # React Frontend Konteyneri
+  frontend:
+    build:
+      context: ./qr-menu-frontend
+      args:
+        # DİKKAT: Vite değişkenleri DERLEME anında gömülür. Bunu değiştirdikten
+        # sonra mutlaka "docker compose up -d --build" ile yeniden derleyin;
+        # sadece restart etmek hiçbir şeyi değiştirmez.
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
+        - VITE_IMGBB_API_KEY=${VITE_IMGBB_API_KEY:-}
+    container_name: qrmenu_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
