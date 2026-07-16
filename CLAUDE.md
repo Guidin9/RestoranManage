@@ -109,7 +109,7 @@ Note that any `VITE_*` value is compiled into the client bundle, so the ImgBB ke
 
 - **Orders carry no waiter attribution.** `waiter_id` was removed from `Order::$fillable` because no migration ever created the column. Adding attribution needs a migration plus changes to `OrderController@store`.
 - **Filename casing.** `App.jsx` imports `./Admin`, `./Cashier`, `./Waiter` — these must keep matching their files exactly, since Windows dev is case-insensitive but the Linux Docker build is not.
-- **`Qr_menu/.env` is committed** (APP_KEY included). It's in `.gitignore`, so it predates that rule; it stays tracked until someone removes it from the index.
+- **`Qr_menu/.env` is untracked** and must stay that way — it holds `APP_KEY` and the staff passwords. Only `.env.example` is committed; every deploy copies it and fills in the real values on the target machine.
 - **QR codes point at `window.location.origin`**, so they're only correct when generated from the domain customers will actually scan into.
 
 ## Styling
