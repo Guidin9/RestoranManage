@@ -114,5 +114,5 @@ git checkout main && git merge dev && git push origin main
 
 # Yayınla (sunucu)
 ssh -i "C:\Users\anils\Desktop\RestoranManage_key.pem" Gui@20.19.211.64
-cd ~/RestoranManage && git pull && sudo docker-compose up -d --build frontend
+cd ~/RestoranManage && git pull && sudo docker compose up -d --build frontend
 ```
