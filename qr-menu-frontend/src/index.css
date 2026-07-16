@@ -1,5 +1,6 @@
 /* =========================================================================
-   RestoranManage — Liquid Glass Tasarım Sistemi
+   RestoranManage — Sıcak Toprak Tonları Tasarım Sistemi
+   Terra-cotta, koyu kahverengi, yanık turuncu ve yumuşak bej.
    Tüm ekranlar (müşteri / garson / kasa / yönetici) bu sistemi paylaşır.
    Görünüm burada; ekran JSX'leri yalnızca className kullanır.
    ========================================================================= */
@@ -11,33 +12,33 @@
 }
 
 :root {
-  /* Renk paleti — koyu cam üzerine canlı aurora (varsayılan) */
-  --bg-0: #0b0b16;
-  --bg-1: #14132a;
+  /* Renk paleti — yumuşak bej zemin üzerine toprak tonları (varsayılan) */
+  --bg-0: #f6efe3;
+  --bg-1: #efe4d2;
 
-  --text: #e7e6f0;
-  --text-dim: #a6a3c2;
-  --text-strong: #ffffff;
+  --text: #43301f;
+  --text-dim: #91765e;
+  --text-strong: #2c1d10;
 
-  /* Cam yüzeyler */
-  --glass-bg: rgba(255, 255, 255, 0.07);
-  --glass-bg-strong: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-border-strong: rgba(255, 255, 255, 0.28);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
-  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  --blur: 18px;
+  /* Sıcak yüzeyler (krem kartlar) */
+  --glass-bg: rgba(255, 251, 243, 0.6);
+  --glass-bg-strong: rgba(255, 252, 246, 0.82);
+  --glass-border: rgba(140, 95, 60, 0.18);
+  --glass-border-strong: rgba(140, 95, 60, 0.34);
+  --glass-shadow: 0 8px 30px rgba(120, 75, 40, 0.14);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --blur: 16px;
 
   /* Vurgu renkleri */
-  --accent: #8b7bff;
-  --accent-2: #c56cff;
-  --accent-grad: linear-gradient(135deg, #8b7bff 0%, #c56cff 100%);
-  --success: #34d39e;
-  --success-grad: linear-gradient(135deg, #2ee6a6 0%, #12b981 100%);
-  --danger: #ff6b81;
-  --danger-grad: linear-gradient(135deg, #ff7a8a 0%, #ff4d6d 100%);
-  --info: #4dd6e8;
-  --warn: #ffb454;
+  --accent: #c05f33;
+  --accent-2: #9c4420;
+  --accent-grad: linear-gradient(135deg, #cd6b3f 0%, #a8431d 100%);
+  --success: #77904a;
+  --success-grad: linear-gradient(135deg, #8ba35c 0%, #67813c 100%);
+  --danger: #b23c2b;
+  --danger-grad: linear-gradient(135deg, #c4523a 0%, #9c2f1f 100%);
+  --info: #6d8f83;
+  --warn: #d9973f;
 
   --radius: 20px;
   --radius-sm: 12px;
@@ -47,7 +48,7 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  color-scheme: dark;
+  color-scheme: light;
   font-family: var(--sans);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
@@ -55,20 +56,23 @@
   text-rendering: optimizeLegibility;
 }
 
-/* Açık tema tercih edenler için de yumuşak bir cam görünümü */
-@media (prefers-color-scheme: light) {
+/* Koyu tema tercih edenler için: koyu kahve zemin, közlenmiş tonlar */
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg-0: #eef1fb;
-    --bg-1: #e3e8fb;
-    --text: #2b2842;
-    --text-dim: #6b6790;
-    --text-strong: #14122a;
-    --glass-bg: rgba(255, 255, 255, 0.55);
-    --glass-bg-strong: rgba(255, 255, 255, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.7);
-    --glass-border-strong: rgba(255, 255, 255, 0.9);
-    --glass-shadow: 0 8px 32px rgba(80, 70, 160, 0.18);
-    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --bg-0: #241711;
+    --bg-1: #2e1d13;
+    --text: #ecdfcd;
+    --text-dim: #b39a82;
+    --text-strong: #faf2e6;
+    --glass-bg: rgba(78, 52, 36, 0.42);
+    --glass-bg-strong: rgba(92, 62, 42, 0.6);
+    --glass-border: rgba(230, 180, 130, 0.16);
+    --glass-border-strong: rgba(230, 180, 130, 0.32);
+    --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    --glass-highlight: inset 0 1px 0 rgba(255, 230, 200, 0.12);
+    --accent: #d97a4a;
+    --accent-2: #e8935f;
+    color-scheme: dark;
   }
 }
 
@@ -84,7 +88,7 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Animasyonlu aurora arka plan --- */
+/* --- Yavaşça süzülen sıcak ışık lekeleri (ocak başı hissi) --- */
 body::before,
 body::after {
   content: '';
@@ -95,12 +99,12 @@ body::after {
 }
 body::before {
   background:
-    radial-gradient(40vmax 40vmax at 15% 20%, rgba(139, 123, 255, 0.55), transparent 60%),
-    radial-gradient(38vmax 38vmax at 85% 15%, rgba(197, 108, 255, 0.45), transparent 60%),
-    radial-gradient(45vmax 45vmax at 75% 85%, rgba(46, 230, 166, 0.35), transparent 60%),
-    radial-gradient(40vmax 40vmax at 20% 90%, rgba(77, 214, 232, 0.35), transparent 60%);
-  filter: blur(30px) saturate(140%);
-  animation: aurora 22s ease-in-out infinite alternate;
+    radial-gradient(42vmax 42vmax at 15% 18%, rgba(205, 107, 63, 0.28), transparent 60%),
+    radial-gradient(38vmax 38vmax at 85% 12%, rgba(217, 151, 63, 0.22), transparent 60%),
+    radial-gradient(45vmax 45vmax at 78% 88%, rgba(139, 163, 92, 0.16), transparent 60%),
+    radial-gradient(40vmax 40vmax at 18% 92%, rgba(156, 68, 32, 0.18), transparent 60%);
+  filter: blur(34px) saturate(115%);
+  animation: aurora 30s ease-in-out infinite alternate;
 }
 body::after {
   background: var(--bg-1);
@@ -109,8 +113,8 @@ body::after {
 
 @keyframes aurora {
   0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50%  { transform: translate3d(2vmax, -3vmax, 0) rotate(8deg) scale(1.08); }
-  100% { transform: translate3d(-2vmax, 2vmax, 0) rotate(-6deg) scale(1.04); }
+  50%  { transform: translate3d(2vmax, -3vmax, 0) rotate(6deg) scale(1.06); }
+  100% { transform: translate3d(-2vmax, 2vmax, 0) rotate(-5deg) scale(1.03); }
 }
 
 /* =========================================================================
@@ -137,8 +141,8 @@ body::after {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow), var(--glass-highlight);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
-  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(130%);
+  backdrop-filter: blur(var(--blur)) saturate(130%);
   animation: slide-down 0.55s var(--ease-out) both;
 }
 .topbar h1,
@@ -155,7 +159,7 @@ h2 { font-size: clamp(19px, 3vw, 24px); }
 p { margin: 0; line-height: 1.5; }
 
 .title-gradient {
-  background: linear-gradient(120deg, #fff 0%, var(--accent-2) 60%, var(--accent) 100%);
+  background: linear-gradient(120deg, var(--text-strong) 0%, var(--accent) 55%, var(--warn) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -164,7 +168,7 @@ p { margin: 0; line-height: 1.5; }
 .muted { color: var(--text-dim); }
 
 /* =========================================================================
-   Cam yüzeyler & kartlar
+   Sıcak yüzeyler & kartlar
    ========================================================================= */
 
 .glass {
@@ -172,8 +176,8 @@ p { margin: 0; line-height: 1.5; }
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   box-shadow: var(--glass-shadow), var(--glass-highlight);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
-  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(130%);
+  backdrop-filter: blur(var(--blur)) saturate(130%);
 }
 
 .card {
@@ -183,14 +187,14 @@ p { margin: 0; line-height: 1.5; }
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow), var(--glass-highlight);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
-  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(130%);
+  backdrop-filter: blur(var(--blur)) saturate(130%);
   transition: transform 0.35s var(--ease-spring),
               border-color 0.3s ease,
               box-shadow 0.3s ease;
   overflow: hidden;
 }
-/* Cam üstünde kayan ışık parıltısı */
+/* Kart üstünde kayan sıcak ışık parıltısı */
 .card::after {
   content: '';
   position: absolute;
@@ -198,15 +202,15 @@ p { margin: 0; line-height: 1.5; }
   left: -60%;
   width: 40%;
   height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.13), transparent);
+  background: linear-gradient(100deg, transparent, rgba(255, 240, 215, 0.55), transparent);
   transform: skewX(-20deg);
   transition: left 0.7s var(--ease-out);
   pointer-events: none;
 }
 .card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-5px);
   border-color: var(--glass-border-strong);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), var(--glass-highlight);
+  box-shadow: 0 16px 40px rgba(120, 75, 40, 0.22), var(--glass-highlight);
 }
 .card:hover::after { left: 120%; }
 
@@ -243,13 +247,13 @@ p { margin: 0; line-height: 1.5; }
               filter 0.2s ease;
   white-space: nowrap;
 }
-.btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
 .btn:active { transform: translateY(0) scale(0.97); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.btn-primary { --btn-grad: var(--accent-grad); border-color: transparent; box-shadow: 0 6px 18px rgba(139, 123, 255, 0.4), var(--glass-highlight); }
-.btn-success { --btn-grad: var(--success-grad); border-color: transparent; color: #06251b; box-shadow: 0 6px 18px rgba(18, 185, 129, 0.35), var(--glass-highlight); }
-.btn-danger  { --btn-grad: var(--danger-grad);  border-color: transparent; box-shadow: 0 6px 18px rgba(255, 77, 109, 0.32), var(--glass-highlight); }
+.btn-primary { --btn-grad: var(--accent-grad); border-color: transparent; color: #fff7ee; box-shadow: 0 6px 18px rgba(168, 67, 29, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+.btn-success { --btn-grad: var(--success-grad); border-color: transparent; color: #fbfff2; box-shadow: 0 6px 18px rgba(103, 129, 60, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+.btn-danger  { --btn-grad: var(--danger-grad);  border-color: transparent; color: #fff5f2; box-shadow: 0 6px 18px rgba(156, 47, 31, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
 .btn-block   { width: 100%; }
 .btn-sm      { padding: 7px 13px; font-size: 13px; }
 .btn-icon    { padding: 9px 12px; border-radius: 14px; }
@@ -271,14 +275,20 @@ p { margin: 0; line-height: 1.5; }
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
-.badge-success { color: #7ff6cf; border-color: rgba(52, 211, 158, 0.4); background: rgba(52, 211, 158, 0.14); }
-.badge-danger  { color: #ffb3bf; border-color: rgba(255, 107, 129, 0.4); background: rgba(255, 107, 129, 0.14); }
-.badge-accent  { color: #d9c9ff; border-color: rgba(139, 123, 255, 0.4); background: rgba(139, 123, 255, 0.16); }
+.badge-success { color: #55702c; border-color: rgba(119, 144, 74, 0.45); background: rgba(139, 163, 92, 0.18); }
+.badge-danger  { color: #96311f; border-color: rgba(178, 60, 43, 0.4); background: rgba(196, 82, 58, 0.14); }
+.badge-accent  { color: #9c4420; border-color: rgba(192, 95, 51, 0.4); background: rgba(205, 107, 63, 0.16); }
+
+@media (prefers-color-scheme: dark) {
+  .badge-success { color: #c3d69a; }
+  .badge-danger  { color: #f0a794; }
+  .badge-accent  { color: #f0b58e; }
+}
 
 .dot-live {
   width: 8px; height: 8px; border-radius: 50%;
-  background: #2ee6a6;
-  box-shadow: 0 0 0 0 rgba(46, 230, 166, 0.7);
+  background: var(--success);
+  box-shadow: 0 0 0 0 rgba(119, 144, 74, 0.7);
   animation: pulse-ring 1.8s ease-out infinite;
 }
 
@@ -312,9 +322,9 @@ p { margin: 0; line-height: 1.5; }
 .input:focus, .select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(139, 123, 255, 0.25);
+  box-shadow: 0 0 0 3px rgba(192, 95, 51, 0.22);
 }
-.select option { color: #14122a; }
+.select option { color: #2c1d10; }
 input[type="file"].input { padding: 9px 12px; cursor: pointer; }
 
 /* =========================================================================
@@ -338,10 +348,10 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
 }
 .tab:hover { transform: translateY(-2px); color: var(--text-strong); }
 .tab.active {
-  color: var(--text-strong);
+  color: #fff7ee;
   background: var(--accent-grad);
   border-color: transparent;
-  box-shadow: 0 6px 18px rgba(139, 123, 255, 0.4);
+  box-shadow: 0 6px 18px rgba(168, 67, 29, 0.35);
 }
 
 /* =========================================================================
@@ -360,11 +370,11 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   max-width: 380px;
   padding: 34px 30px;
   border-radius: var(--radius-lg);
-  background: var(--glass-bg);
+  background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow), var(--glass-highlight);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
   animation: pop-in 0.55s var(--ease-spring) both;
 }
 .login-emoji {
@@ -383,10 +393,13 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   font-size: 14px;
   text-align: center;
   margin-bottom: 16px;
-  color: #ffb3bf;
-  background: rgba(255, 107, 129, 0.14);
-  border: 1px solid rgba(255, 107, 129, 0.35);
+  color: #96311f;
+  background: rgba(196, 82, 58, 0.13);
+  border: 1px solid rgba(178, 60, 43, 0.35);
   animation: shake 0.4s ease;
+}
+@media (prefers-color-scheme: dark) {
+  .alert { color: #f0a794; }
 }
 
 /* =========================================================================
@@ -451,7 +464,7 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   border-radius: 14px;
   object-fit: cover;
   border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(120, 75, 40, 0.18);
   transition: transform 0.35s var(--ease-spring);
 }
 .prod-row:hover .prod-thumb { transform: scale(1.06) rotate(-2deg); }
@@ -461,7 +474,7 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   background: var(--glass-bg-strong);
 }
 .prod-name { font-weight: 600; color: var(--text-strong); display: block; }
-.prod-price { color: #7ff6cf; font-weight: 700; font-size: 14px; }
+.prod-price { color: var(--accent); font-weight: 700; font-size: 14px; }
 
 /* Adet sayacı (stepper) */
 .stepper { display: inline-flex; align-items: center; gap: 10px; }
@@ -476,11 +489,11 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   cursor: pointer;
   transition: transform 0.18s var(--ease-spring), background 0.2s ease;
 }
-.qty-btn:hover { transform: scale(1.12); background: var(--accent-bg, rgba(139,123,255,0.2)); }
+.qty-btn:hover { transform: scale(1.12); background: rgba(205, 107, 63, 0.22); }
 .qty-btn:active { transform: scale(0.9); }
 .qty-num { min-width: 20px; text-align: center; font-weight: 700; color: var(--text-strong); }
 
-/* Sepet (alttan yükselen cam bar) */
+/* Sepet (alttan yükselen sıcak bar) */
 .cart-bar {
   position: sticky;
   bottom: 18px;
@@ -489,9 +502,9 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   border-radius: var(--radius-lg);
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border-strong);
-  box-shadow: 0 -6px 40px rgba(0, 0, 0, 0.4), var(--glass-highlight);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 -6px 36px rgba(120, 75, 40, 0.22), var(--glass-highlight);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
   animation: slide-up 0.5s var(--ease-spring) both;
 }
 .cart-list { list-style: none; padding: 0; margin: 12px 0; }
@@ -503,8 +516,8 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
    ========================================================================= */
 
 .table-card { cursor: pointer; }
-.table-card--free   { border-color: rgba(52, 211, 158, 0.4); }
-.table-card--busy   { border-color: rgba(255, 107, 129, 0.45); }
+.table-card--free   { border-color: rgba(119, 144, 74, 0.45); }
+.table-card--busy   { border-color: rgba(178, 60, 43, 0.5); }
 .table-card--free::before,
 .table-card--busy::before {
   content: '';
@@ -527,7 +540,7 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(6, 5, 16, 0.55);
+  background: rgba(44, 26, 14, 0.45);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   animation: fade-in 0.3s ease both;
@@ -542,8 +555,8 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border-strong);
   box-shadow: var(--glass-shadow), var(--glass-highlight);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
   animation: pop-in 0.45s var(--ease-spring) both;
 }
 .modal-close {
@@ -554,9 +567,9 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
   border-radius: 12px;
   font-size: 18px;
   cursor: pointer;
-  transition: transform 0.2s var(--ease-spring), background 0.2s ease;
+  transition: transform 0.2s var(--ease-spring), background 0.2s ease, color 0.2s ease;
 }
-.modal-close:hover { transform: rotate(90deg); background: var(--danger-grad); }
+.modal-close:hover { transform: rotate(90deg); background: var(--danger-grad); color: #fff5f2; }
 
 .subpanel {
   padding: 16px;
@@ -625,7 +638,7 @@ input[type="file"].input { padding: 9px 12px; cursor: pointer; }
 @keyframes pop-in        { 0% { opacity: 0; transform: scale(0.92) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes float         { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes shake         { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
-@keyframes pulse-ring    { 0% { box-shadow: 0 0 0 0 rgba(46, 230, 166, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(46, 230, 166, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 230, 166, 0); } }
+@keyframes pulse-ring    { 0% { box-shadow: 0 0 0 0 rgba(119, 144, 74, 0.55); } 70% { box-shadow: 0 0 0 8px rgba(119, 144, 74, 0); } 100% { box-shadow: 0 0 0 0 rgba(119, 144, 74, 0); } }
 @keyframes spin          { to { transform: rotate(360deg); } }
 
 .spinner {

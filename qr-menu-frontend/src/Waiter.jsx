@@ -173,7 +173,7 @@ function Waiter() {
                                 Adisyon: <strong style={{ color: 'var(--text-strong)' }}>{table.active_order?.items?.length || 0} Kalem Ürün</strong>
                             </p>
                         ) : (
-                            <p style={{ fontSize: 13, color: '#7ff6cf' }}>Sipariş almak için tıkla</p>
+                            <p style={{ fontSize: 13, color: 'var(--success)' }}>Sipariş almak için tıkla</p>
                         )}
                     </div>
                 ))}
