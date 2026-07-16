@@ -4,10 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-A QR-code restaurant menu system, split into two independent projects that are developed and run separately (no monorepo tooling, no shared package manager, not a git repo):
+A QR-code restaurant menu system. One git repo (`github.com/Guidin9/RestoranManage`,
+branches `main` = live and `dev` = UI work) holding two apps that are developed and run
+separately — no monorepo tooling, no shared package manager:
 
-- `Qr_menu/` — Laravel 13 / PHP 8.3 backend, API-only (MySQL in dev/prod, SQLite in tests)
+- `Qr_menu/` — Laravel 13 / PHP 8.4 backend, API-only (MySQL in dev/prod, SQLite in tests)
 - `qr-menu-frontend/` — React 19 + Vite SPA serving all four user-facing screens
+
+**Live** at `https://restoranmanage.francecentral.cloudapp.azure.com` on an Azure VM via
+Docker Compose (Caddy + Let's Encrypt HTTPS). See the "Deployment" section below and
+`README.md` for the operational details.
 
 The UI, code comments, and API response messages are in Turkish. Keep new user-facing strings Turkish to match.
 
@@ -44,6 +50,26 @@ npm run build
 npm run lint      # oxlint, not eslint
 npm run preview
 ```
+
+## Deployment (Azure VM + Docker Compose)
+
+Live on an Azure Linux VM. Access: `ssh -i <RestoranManage_key.pem> Gui@20.19.211.64`;
+repo at `~/RestoranManage`. Root `docker-compose.yml` defines four services — `caddy`,
+`frontend`, `backend`, `db` — and the root `.env` (copied from `.env.example`) supplies
+config. `SITE_ADDRESS` is the single source of truth for the public host; `APP_URL` and
+`VITE_API_URL` derive from it.
+
+Server specifics that bite:
+- **Use `sudo docker compose` (V2, space).** The old `docker-compose` (V1, hyphen) is
+  still installed but is broken against BuildKit images (`KeyError: 'ContainerConfig'`);
+  don't use it. `docker` needs `sudo` here — the `Gui` user isn't in the `docker` group.
+- **Deploy a code change:** `git pull && sudo docker compose up -d --build <service>`.
+  For a UI-only change that's `--build frontend` (30–60 s, backend/db untouched).
+- **Never `down -v`** — that deletes the `restoranmanage_db_data` volume (real data).
+- Provision/refresh staff after editing `.env`:
+  `sudo docker compose exec -T backend php artisan db:seed --class=StaffSeeder --force`.
+- `APP_KEY`: generate on the server with `echo "base64:$(openssl rand -base64 32)"` —
+  `artisan key:generate` can't run before Compose validates the (still-empty) `APP_KEY`.
 
 ## Architecture
 
@@ -114,15 +140,56 @@ Note that any `VITE_*` value is compiled into the client bundle, so the ImgBB ke
 - **`Qr_menu/.env` is untracked** and must stay that way — it holds `APP_KEY` and the staff passwords. Only `.env.example` is committed; every deploy copies it and fills in the real values on the target machine.
 - **QR codes point at `window.location.origin`**, so they're only correct when generated from the domain customers will actually scan into.
 
-## Styling
+## Styling — "Liquid Glass" design system
 
-Every screen uses inline `style={{}}` objects; there are no component/CSS modules to follow. Tailwind and postcss appear in `qr-menu-frontend/package.json` devDependencies but are not wired up (no config file, no directives in `index.css`) — don't assume Tailwind classes will work. Tailwind *is* fully wired in the backend's own Vite setup (`Qr_menu/vite.config.js`, `resources/css/app.css`), but that pipeline only backs the stock Laravel welcome page at `/` and is unrelated to the product UI.
+All four screens share **one central stylesheet, `src/index.css`**, written as a
+glassmorphism ("liquid glass") design system. Screens are styled with `className`, not
+inline `style` objects. When adding or changing UI, reach for an existing class first and
+only add new rules to `index.css`; keep inline `style` for one-off layout tweaks
+(spacing, grid template) — not for colors, surfaces, or anything themable.
+
+**Design tokens** live in `:root` (and a `@media (prefers-color-scheme: light)` override):
+`--glass-bg` / `--glass-bg-strong` / `--glass-border` (frosted surfaces), `--accent` +
+`--accent-grad` (violet→magenta), `--success`/`--danger`/`--info` and their `-grad`
+variants, `--radius*`, and easing curves `--ease-spring` / `--ease-out`. Use the tokens;
+don't hardcode hex colors in components.
+
+**Core classes** (all defined in `index.css`):
+- Layout: `.page` / `.page--narrow`, `.topbar`, `.row-between`, `.stack`, `.grid` + `.grid-cards` / `.grid-tables` / `.grid-wide`
+- Surfaces: `.glass`, `.card` (frosted panel with hover-lift + light-sweep), `.subpanel`
+- Buttons: `.btn` + `.btn-primary` / `.btn-success` / `.btn-danger` / `.btn-block` / `.btn-sm` / `.btn-icon`
+- Forms: `.field`, `.label`, `.input`, `.select`, `.form-inline`
+- Auth screens: `.login-wrap`, `.login-card`, `.login-emoji`, `.login-sub`, `.alert`
+- Bits: `.badge` (+ `-success`/`-danger`/`-accent`), `.dot-live` (pulsing), `.tabs`/`.tab`, `.modal-overlay`/`.modal`/`.modal-close`, `.empty` (empty state), `.spinner`
+- Menu-specific: `.cat-block`/`.cat-title`, `.prod-list`/`.prod-row`/`.prod-thumb`, `.stepper`/`.qty-btn`, `.cart-bar`
+- Table map: `.table-card` + `.table-card--free` / `.table-card--busy`
+
+**Animation conventions:** the background is an animated aurora on `body::before`. Cards
+enter with a staggered reveal — add `className="... reveal"` and `style={{ '--i': index }}`
+so each item's `animation-delay` steps off its index. Hover lifts, the modal springs in
+(`pop-in`), the live dot pulses. All keyframes are in `index.css`; a
+`@media (prefers-reduced-motion: reduce)` block disables them for accessibility. Keep new
+motion in that same system rather than inventing per-component animations.
+
+**Preserve logic when restyling.** The screens' data flow (`apiFetch`, `useState`,
+handlers) must stay intact — change the presentation (`className`, wrapper structure)
+only. Never touch `src/api.js` for a styling change.
+
+Tailwind and postcss appear in `package.json` devDependencies but are **not wired up** (no
+config, no directives) — `className="flex gap-4"` does nothing. Tailwind *is* wired in the
+backend's own Vite setup (`Qr_menu/vite.config.js`), but that only backs the stock Laravel
+welcome page at `/` and is unrelated to the product UI.
+
+The design work happens on the **`dev` branch**; see `qr-menu-frontend/TASARIM.md` for the
+full UI workflow (local dev, deploy). Deploy a UI change with:
+`git pull && sudo docker compose up -d --build frontend` on the server.
 
 ## Default credentials
 
-Set in `Qr_menu/.env` and seeded by `StaffSeeder`. **Change these before exposing the app.**
+These are the **local-dev** defaults, set in `Qr_menu/.env` and seeded by `StaffSeeder`.
+Production uses different passwords (set in the server's root `.env`; not in the repo).
 
-| Screen | Username | Password |
+| Screen | Username | Password (local dev) |
 |---|---|---|
 | `/admin` | `admin` | `admin123` |
 | `/cashier` | `kasa` | `123456` |

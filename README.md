@@ -14,17 +14,20 @@ Docker ile yayında, HTTPS çalışıyor (Caddy + Let's Encrypt). Son güncellem
 **Tamamlandı**
 - Backend + frontend kodu, dört ekran (müşteri / garson / kasa / yönetici) çalışır durumda.
 - Docker ile canlıya alındı: 4 konteyner (caddy, frontend, backend, db), yalnızca 80/443 dışa açık.
-- HTTPS uçtan uca doğrulandı (admin girişi HTTPS üzerinden token döndürdü).
+- HTTPS uçtan uca doğrulandı (admin girişi HTTPS üzerinden token döndürüyor).
 - Veritabanı migrate edildi, `StaffSeeder` ile admin + kasa hesapları oluşturuldu.
 - Git geçmişi temizlendi; `main` (canlı) ve `dev` (UI geliştirme) branch'leri hazır.
+- **Liquid glass UI** dört ekrana da uygulandı (`src/index.css` merkezi tasarım sistemi)
+  ve canlıya alındı.
+- **Docker Compose V2 (v5.3.1)** sunucuya kuruldu; deploy akışı artık temiz.
 
 **Yarım / bekleyen**
 - Menü içeriği boş: masa, kategori ve ürünler `/admin` panelinden elle eklenecek.
 - QR kodları henüz basılmadı (adres kalıcı, hazır olunca admin panelinden basılabilir).
-- UI/tasarım geliştirmesi başlamadı — bkz. `qr-menu-frontend/TASARIM.md`.
+- UI ince ayarı sürüyor — geliştirme `dev` branch'inde, iş akışı `qr-menu-frontend/TASARIM.md`.
 
-**Sıradaki adım:** `dev` branch'inde UI tasarımına başlamak (önce müşteri menüsü),
-paralelde `/admin`'den gerçek menüyü doldurmak. Deploy akışı `TASARIM.md`'de.
+**Sıradaki adım:** UI'yı `dev` branch'inde parlatmaya devam etmek ve `/admin`'den gerçek
+menüyü doldurmak. UI deploy'u: sunucuda `git pull && sudo docker compose up -d --build frontend`.
 
 ## Ekranlar
 
@@ -80,6 +83,12 @@ Dört konteyner: `caddy` (HTTPS + yönlendirme), `frontend` (nginx + React), `ba
 (Laravel), `db` (MySQL). Dışarıya yalnızca Caddy açıktır; API ile arayüz aynı adresten
 servis edilir (`/api/*` Caddy tarafından backend'e proxy'lenir), bu yüzden ayrı bir
 `api.*` alt alan adı gerekmez.
+
+> **Compose V2 gerekir.** Komutlar `docker compose` (boşluklu) şeklindedir. Eski
+> `docker-compose` (tireli) V1, BuildKit imajlarında `ContainerConfig` hatası verir —
+> kullanmayın. V2 yoksa resmi binary'yi kurun:
+> `sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose && sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose`.
+> `docker` `sudo` gerektiriyorsa tüm komutların başına `sudo` ekleyin.
 
 **Önkoşul — sunucunun bir alan adı olmalı.** Sertifika çıplak IP'ye alınamaz. Ücretsiz
 yolu: Azure Portal > VM > Overview > DNS name > *Configure* ile bir etiket verin;
