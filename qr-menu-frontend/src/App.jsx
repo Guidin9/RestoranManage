@@ -17,6 +17,7 @@ function App() {
     // DİNAMİK ALANLARIMIZ
     const [tableNumber, setTableNumber] = useState('Yükleniyor...');
     const [tableId, setTableId] = useState(null);
+    const [tableTotal, setTableTotal] = useState(0);      // masanın açık adisyon toplamı (herkesin siparişi)
     const [error, setError] = useState(null);
     const isAdminRoute = window.location.pathname === '/admin';
 
@@ -33,19 +34,27 @@ function App() {
             return;
         }
 
-        apiFetch(`/api/menu/${tableUuid}`)
-            .then(res => {
-                if (res.success) {
-                    setMenu(res.data);
-                    setTableNumber(res.table_number);
-                    setTableId(res.table_id);
-                } else {
+        const fetchMenu = () => {
+            apiFetch(`/api/menu/${tableUuid}`)
+                .then(res => {
+                    if (res.success) {
+                        setMenu(res.data);
+                        setTableNumber(res.table_number);
+                        setTableId(res.table_id);
+                        setTableTotal(res.active_order_total || 0);
+                    } else {
+                        setError("Hatalı veya geçersiz bir QR kod okuttunuz!");
+                    }
+                })
+                .catch(() => {
                     setError("Hatalı veya geçersiz bir QR kod okuttunuz!");
-                }
-            })
-            .catch(() => {
-                setError("Hatalı veya geçersiz bir QR kod okuttunuz!");
-            });
+                });
+        };
+
+        fetchMenu();
+        // Masa hesabı canlı kalsın: diğer kişiler/garson sipariş ekledikçe toplam güncellensin.
+        const interval = setInterval(fetchMenu, 5000);
+        return () => clearInterval(interval);
     }, [tableUuid, isCashierRoute, isWaiterRoute]);
 
     const addToCart = (product) => {
@@ -144,6 +153,13 @@ function App() {
                     <div className="menu-arch-label">Masa</div>
                 </div>
             </header>
+
+            {tableTotal > 0 && (
+                <div className="tab-total">
+                    <span className="tab-total-label">Masa Hesabı</span>
+                    <span className="tab-total-value">{tableTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                </div>
+            )}
 
             {menu.map((category, ci) => (
                 <section key={category.id} className="reveal" style={{ '--i': ci }}>

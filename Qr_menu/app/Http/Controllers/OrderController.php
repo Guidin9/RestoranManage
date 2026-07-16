@@ -25,15 +25,24 @@ class OrderController extends Controller
             'status' => 'active'
         ]);
 
-        // 3. Gönderilen ürünleri döngüyle adisyona ekle
+        // 3. Gönderilen ürünleri döngüyle adisyona ekle.
+        //    Aynı üründen adisyonda zaten varsa yeni satır açma; mevcut kalemin
+        //    adedini artır. Böylece çok kişili masa ve garsonun tek tek eklemesi
+        //    kasada tek satırda birleşir (price_at_sale ilk satış anında sabit kalır).
         foreach ($request->items as $item) {
-            $product = Product::find($item['id']);
+            $existing = $order->items()->where('product_id', $item['id'])->first();
 
-            $order->items()->create([
-                'product_id' => $item['id'],
-                'quantity' => $item['quantity'],
-                'price_at_sale' => $product->price
-            ]);
+            if ($existing) {
+                $existing->increment('quantity', $item['quantity']);
+            } else {
+                $product = Product::find($item['id']);
+
+                $order->items()->create([
+                    'product_id' => $item['id'],
+                    'quantity' => $item['quantity'],
+                    'price_at_sale' => $product->price
+                ]);
+            }
         }
 
         return response()->json([
@@ -71,6 +80,7 @@ class OrderController extends Controller
         }
 
         $order->status = 'paid';
+        $order->paid_at = now();
         $order->save();
 
         return response()->json([
@@ -146,10 +156,101 @@ class OrderController extends Controller
             $order = Order::find($orderId);
             if ($order) {
                 $order->status = 'paid';
+                $order->paid_at = now();
                 $order->save();
             }
         }
 
         return response()->json(['success' => true, 'message' => 'Ürün adisyondan düşüldü.']);
+    }
+
+    // Kasa Ekranı İçin: Seçilen günün gün özeti + haftalık/aylık bağlam + grafik verisi.
+    // ?date=YYYY-MM-DD (varsayılan bugün). Ödenmiş siparişler paid_at gününe göre filtrelenir.
+    public function dailySummary(Request $request): JsonResponse
+    {
+        $date = $request->query('date')
+            ? \Carbon\Carbon::parse($request->query('date'))->startOfDay()
+            : \Carbon\Carbon::today();
+
+        $weekStart  = $date->copy()->startOfWeek();
+        $weekEnd    = $date->copy()->endOfWeek();
+        $monthStart = $date->copy()->startOfMonth();
+        $monthEnd   = $date->copy()->endOfMonth();
+        $trendStart = $date->copy()->subDays(13)->startOfDay();
+
+        // Tüm hesapları tek sorguda çek (en geniş aralık), gerisini PHP'de topla.
+        $rangeStart = $trendStart->lt($monthStart) ? $trendStart : $monthStart;
+        $dayEnd     = $date->copy()->endOfDay();
+        $rangeEnd   = $monthEnd->gt($dayEnd) ? $monthEnd : $dayEnd;
+
+        $orders = Order::with('items.product')
+            ->where('status', 'paid')
+            ->whereNotNull('paid_at')
+            ->whereBetween('paid_at', [$rangeStart, $rangeEnd])
+            ->get();
+
+        $orderTotal = fn ($o) => $o->items->sum(fn ($i) => $i->price_at_sale * $i->quantity);
+        $orderQty   = fn ($o) => $o->items->sum('quantity');
+        $inRange    = fn ($start, $end) => $orders->filter(fn ($o) => $o->paid_at->between($start, $end));
+
+        $metrics = function ($subset) use ($orderTotal, $orderQty) {
+            $revenue = round($subset->sum($orderTotal), 2);
+            $tables  = $subset->count();
+            $days    = $subset->map(fn ($o) => $o->paid_at->toDateString())->unique()->count();
+
+            return [
+                'revenue'           => $revenue,
+                'tables_closed'     => $tables,
+                'items_sold'        => (int) $subset->sum($orderQty),
+                'avg_ticket'        => $tables ? round($revenue / $tables, 2) : 0,
+                'avg_daily_revenue' => $days ? round($revenue / $days, 2) : 0,
+            ];
+        };
+
+        $todaySet = $inRange($date->copy()->startOfDay(), $dayEnd);
+
+        // Son 14 günün günlük ciro trendi (çubuk grafik için).
+        $trend = [];
+        for ($i = 13; $i >= 0; $i--) {
+            $d = $date->copy()->subDays($i);
+            $set = $inRange($d->copy()->startOfDay(), $d->copy()->endOfDay());
+            $trend[] = [
+                'date'    => $d->toDateString(),
+                'revenue' => round($set->sum($orderTotal), 2),
+                'tables'  => $set->count(),
+            ];
+        }
+
+        // Seçili günün en çok satan ilk 5 ürünü (yatay çubuk için).
+        $productAgg = [];
+        foreach ($todaySet as $o) {
+            foreach ($o->items as $it) {
+                $name = $it->product->name ?? 'Ürün';
+                if (! isset($productAgg[$name])) {
+                    $productAgg[$name] = ['name' => $name, 'qty' => 0, 'revenue' => 0];
+                }
+                $productAgg[$name]['qty']     += $it->quantity;
+                $productAgg[$name]['revenue'] += $it->price_at_sale * $it->quantity;
+            }
+        }
+        $topProducts = collect($productAgg)
+            ->sortByDesc('qty')
+            ->take(5)
+            ->map(fn ($p) => [
+                'name'    => $p['name'],
+                'qty'     => (int) $p['qty'],
+                'revenue' => round($p['revenue'], 2),
+            ])
+            ->values();
+
+        return response()->json([
+            'success'      => true,
+            'date'         => $date->toDateString(),
+            'today'        => $metrics($todaySet),
+            'week'         => $metrics($inRange($weekStart, $weekEnd)),
+            'month'        => $metrics($inRange($monthStart, $monthEnd)),
+            'daily_trend'  => $trend,
+            'top_products' => $topProducts,
+        ], 200);
     }
 }

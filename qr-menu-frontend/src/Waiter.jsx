@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
-import { IconPlus, IconMinus, IconX, IconUser, IconLogout, IconLogin, IconCalendar } from './icons';
+import { IconPlus, IconMinus, IconX, IconUser, IconLogout, IconLogin, IconCalendar, IconCheck, IconBag } from './icons';
 
 function Waiter() {
     // Token yoksa kayıtlı garson bilgisi de anlamsız; ikisini birlikte değerlendiriyoruz.
@@ -18,6 +18,10 @@ function Waiter() {
     const [tables, setTables] = useState([]);
     const [menu, setMenu] = useState([]);
     const [selectedTable, setSelectedTable] = useState(null);
+
+    // Bekleyen sepet: garson ürünleri önce burada toplar, "Siparişi Gönder" ile
+    // topluca yollar. { [productId]: { product, qty } }
+    const [pendingCart, setPendingCart] = useState({});
 
     // 1. MANTIK: Garson Girişi
     const handleLogin = (e) => {
@@ -89,19 +93,50 @@ function Waiter() {
         return () => clearInterval(interval);
     }, [waiterInfo, selectedTable?.id]);
 
-    // 3. MANTIK: Masaya Ürün Ekleme (/api/orders müşteriyle ortak, herkese açık uç)
-    const handleAddProduct = (tableId, productId) => {
+    // Başka bir masaya geçince (ya da modal kapanınca) bekleyen sepeti sıfırla.
+    useEffect(() => {
+        setPendingCart({});
+    }, [selectedTable?.id]);
+
+    // 3. MANTIK: Bekleyen sepete ürün ekle / çıkar (henüz sunucuya gitmez).
+    //    Aynı ürün tekrar seçilince yeni satır açmaz, adedini artırır.
+    const addToPending = (product) => {
+        setPendingCart(prev => {
+            const existing = prev[product.id];
+            return { ...prev, [product.id]: { product, qty: (existing?.qty || 0) + 1 } };
+        });
+    };
+
+    const decFromPending = (productId) => {
+        setPendingCart(prev => {
+            const existing = prev[productId];
+            if (!existing) return prev;
+            if (existing.qty <= 1) {
+                const next = { ...prev };
+                delete next[productId];
+                return next;
+            }
+            return { ...prev, [productId]: { ...existing, qty: existing.qty - 1 } };
+        });
+    };
+
+    // Bekleyen sepeti tek partide masaya gönder (/api/orders herkese açık uç).
+    // Backend aynı ürünleri mevcut adisyonla birleştirir.
+    const submitPending = () => {
+        const items = Object.values(pendingCart).map(({ product, qty }) => ({ id: product.id, quantity: qty }));
+        if (items.length === 0) return;
+
         apiFetch('/api/orders', {
             method: 'POST',
-            body: {
-                table_id: tableId,
-                items: [{ id: productId, quantity: 1 }]
-            }
+            body: { table_id: selectedTable.id, items }
         })
             .then(res => {
-                if (res.success) fetchAllData();
+                if (res.success) {
+                    setPendingCart({});
+                    fetchAllData();
+                }
             })
-            .catch(() => alert("Ürün eklenemedi, sunucuya ulaşılamıyor."));
+            .catch(() => alert("Sipariş gönderilemedi, sunucuya ulaşılamıyor."));
     };
 
     // 4. MANTIK: Adisyondan Ürün Eksiltme / Silme
@@ -118,6 +153,11 @@ function Waiter() {
     // Adisyon toplamı (yalnızca görünüm için)
     const orderItems = selectedTable?.active_order?.items || [];
     const orderTotal = orderItems.reduce((sum, item) => sum + item.price_at_sale * item.quantity, 0).toFixed(2);
+
+    // Bekleyen sepet (henüz gönderilmemiş) toplamları
+    const pendingLines = Object.values(pendingCart);
+    const pendingCount = pendingLines.reduce((n, l) => n + l.qty, 0);
+    const pendingTotal = pendingLines.reduce((s, l) => s + l.product.price * l.qty, 0).toFixed(2);
 
     // 🔴 EĞER GİRİŞ YAPILMADIYSA: LOGIN EKRANI
     if (!waiterInfo) {
@@ -224,27 +264,63 @@ function Waiter() {
                                 <div className="hint-box" style={{ marginBottom: 22 }}>Bu masada henüz ürün yok — aşağıdan ekleyin.</div>
                             )}
 
-                            {/* BÖLÜM 2: MASAYA MENÜDEN ÜRÜN EKLEME */}
+                            {/* BÖLÜM 2: MASAYA MENÜDEN ÜRÜN EKLEME (önce sepete toplanır) */}
                             <h4 className="section-title section-title--add"><IconPlus size={15} />Masaya Ürün Ekle</h4>
 
                             {menu.map(category => (
                                 <div key={category.id}>
                                     <div className="section-label">{category.name}</div>
                                     <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
-                                        {category.products.map(product => (
-                                            <div key={product.id} className="add-chip">
-                                                <div className="add-chip-body">
-                                                    <div className="add-chip-name">{product.name}</div>
-                                                    <div className="add-chip-price">{product.price} ₺</div>
+                                        {category.products.map(product => {
+                                            const inCart = pendingCart[product.id]?.qty || 0;
+                                            return (
+                                                <div key={product.id} className="add-chip">
+                                                    <div className="add-chip-body">
+                                                        <div className="add-chip-name">{product.name}</div>
+                                                        <div className="add-chip-price">{product.price} ₺</div>
+                                                    </div>
+                                                    {inCart > 0 ? (
+                                                        <div className="stepper">
+                                                            <button onClick={() => decFromPending(product.id)} className="qty-btn"><IconMinus size={14} /></button>
+                                                            <span className="qty-num">{inCart}</span>
+                                                            <button onClick={() => addToPending(product)} className="qty-btn qty-btn--inc"><IconPlus size={14} /></button>
+                                                        </div>
+                                                    ) : (
+                                                        <button onClick={() => addToPending(product)} className="btn btn-success btn-sm"><IconPlus size={12} />Ekle</button>
+                                                    )}
                                                 </div>
-                                                <button onClick={() => handleAddProduct(selectedTable.id, product.id)} className="btn btn-success btn-sm"><IconPlus size={12} />Ekle</button>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
 
-                            <button onClick={() => setSelectedTable(null)} className="btn btn-ink btn-block" style={{ marginTop: 22 }}>Pencereyi Kapat</button>
+                            {/* BEKLEYEN SEPET — toplu gönderim */}
+                            {pendingCount > 0 && (
+                                <div className="pending-cart">
+                                    <div className="pending-cart-head">
+                                        <div className="cart-bag"><IconBag size={19} /><span className="cart-count">{pendingCount}</span></div>
+                                        <span className="pending-cart-title">Gönderilecek Sepet</span>
+                                        <span className="pending-cart-total">{pendingTotal} ₺</span>
+                                    </div>
+                                    <div className="stack" style={{ gap: 7, margin: '12px 0' }}>
+                                        {pendingLines.map(({ product, qty }) => (
+                                            <div key={product.id} className="pending-line">
+                                                <span className="pending-line-name">{product.name}</span>
+                                                <div className="stepper">
+                                                    <button onClick={() => decFromPending(product.id)} className="qty-btn"><IconMinus size={14} /></button>
+                                                    <span className="qty-num">{qty}</span>
+                                                    <button onClick={() => addToPending(product)} className="qty-btn qty-btn--inc"><IconPlus size={14} /></button>
+                                                </div>
+                                                <span className="pending-line-price">{(product.price * qty).toFixed(2)} ₺</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button onClick={submitPending} className="btn btn-success btn-block"><IconCheck size={16} />Siparişi Gönder ({pendingTotal} ₺)</button>
+                                </div>
+                            )}
+
+                            <button onClick={() => setSelectedTable(null)} className="btn btn-ink btn-block" style={{ marginTop: 14 }}>Pencereyi Kapat</button>
                         </div>
 
                     </div>

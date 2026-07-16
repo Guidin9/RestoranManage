@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $fillable = ['table_id', 'status'];
+    protected $fillable = ['table_id', 'status', 'paid_at'];
+
+    protected $casts = [
+        'paid_at' => 'datetime',
+    ];
 
     public function items()
     {

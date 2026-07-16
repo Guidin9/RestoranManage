@@ -433,6 +433,27 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   margin-top: 5px;
 }
 
+/* Masa hesabı şeridi — masanın o ana kadarki açık adisyon toplamı */
+.tab-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 0 6px;
+  padding: 13px 16px;
+  border-radius: var(--radius-md);
+  background: var(--deep-grad);
+  color: #eef4f2;
+  box-shadow: 0 12px 26px -18px rgba(18, 50, 64, 0.6);
+}
+.tab-total-label {
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(238, 244, 242, 0.6);
+}
+.tab-total-value { font: 400 22px/1 var(--serif); color: #fff; }
+
 .cat-title { font: 700 13px/1 var(--sans); color: var(--ink); margin: 18px 4px 12px; }
 
 .prod-card {
@@ -711,6 +732,30 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .add-chip-price { font: 500 11px/1 var(--sans); color: var(--ink-dim); margin-top: 3px; }
 
+/* Bekleyen sepet (garson modalı) — gönderilmeden önce toplanan ürünler */
+.pending-cart {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--mist);
+  border: 1px solid rgba(111, 138, 82, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.pending-cart-head { display: flex; align-items: center; gap: 11px; }
+.pending-cart-head .cart-bag { color: var(--olive); }
+.pending-cart-head .cart-count { background: var(--olive); }
+.pending-cart-title { flex: 1; font: 700 13px/1 var(--sans); color: var(--ink); }
+.pending-cart-total { font: 700 15px/1 var(--sans); color: var(--olive-deep); }
+.pending-line {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 8px 12px;
+}
+.pending-line-name { flex: 1; font: 600 13px/1.2 var(--sans); color: var(--ink); }
+.pending-line-price { font: 600 13px/1 var(--sans); color: var(--ink-dim); min-width: 64px; text-align: right; }
+
 /* =========================================================================
    Kasa — açık hesap kartları
    ========================================================================= */
@@ -760,6 +805,122 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   transition: background 0.2s ease;
 }
 .order-pay:hover { background: var(--sea-deep); }
+
+/* =========================================================================
+   Kasa — gün özeti dashboard'u
+   ========================================================================= */
+
+.summary-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.kpi {
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kpi--accent { background: var(--deep-grad); border-color: transparent; }
+.kpi-label {
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.kpi-value { font: 400 28px/1 var(--serif); color: var(--ink); }
+.kpi--accent .kpi-label { color: rgba(238, 244, 242, 0.6); }
+.kpi--accent .kpi-value { color: #fff; }
+
+.context-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.ctx {
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: var(--mist);
+  border: 1px solid var(--line);
+}
+.ctx-title {
+  display: block;
+  font: 400 16px/1 var(--serif);
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.ctx-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  font: 500 13px/1.3 var(--sans);
+  color: var(--ink-dim);
+}
+.ctx-row b { font-weight: 700; color: var(--ink); }
+
+.chart-card {
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 16px;
+}
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 13px/1 var(--sans);
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.chart-title svg { color: var(--sea); }
+.chart-empty {
+  padding: 34px 20px;
+  text-align: center;
+  font: 400 13px/1.5 var(--sans);
+  color: var(--ink-dim);
+}
+
+/* Çok satanlar — yatay meter çubuk */
+.pbar-row { display: flex; flex-direction: column; gap: 6px; }
+.pbar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pbar-name { font: 600 13px/1.2 var(--sans); color: var(--ink); }
+.pbar-value { font: 700 13px/1 var(--sans); color: var(--ink); }
+.pbar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--sand);
+  overflow: hidden;
+}
+.pbar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--olive);
+  min-width: 4px;
+  transition: width 0.5s var(--ease-out);
+}
+.pbar-sub { font: 500 11px/1 var(--sans); color: var(--ink-dim); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pbar-fill { transition: none; }
+}
 
 /* =========================================================================
    Admin — personel, masa ve menü yönetimi

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
 import { IconCard, IconLogout, IconLogin, IconCloche } from './icons';
+import CashierSummary from './CashierSummary';
 
 function Cashier() {
     // Oturum, kasa token'ının varlığına bağlı.
@@ -15,8 +16,14 @@ function Cashier() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    // Görünüm: açık hesaplar mı, gün özeti dashboard mu?
+    const [view, setView] = useState('orders');
+
     // Hesap kapatma onayı bekleyen sipariş (modal)
     const [closingOrder, setClosingOrder] = useState(null);
+
+    // Dashboard'un yetki hatasında oturumu düşürmesi için sabit referans
+    const handleSummaryAuthError = useCallback(() => setIsAuthenticated(false), []);
 
     // 1. MANTIK: Giriş Yapma İşlemi
     const handleLogin = (e) => {
@@ -65,7 +72,7 @@ function Cashier() {
     };
 
     useEffect(() => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || view !== 'orders') return;
 
         fetchActiveOrders();
         const interval = setInterval(() => {
@@ -73,7 +80,7 @@ function Cashier() {
         }, 5000);
 
         return () => clearInterval(interval);
-    }, [isAuthenticated]);
+    }, [isAuthenticated, view]);
 
     const handlePayOrder = (orderId) => {
         apiFetch(`/api/cashier/orders/${orderId}/pay`, { role: 'cashier', method: 'POST' })
@@ -151,13 +158,21 @@ function Cashier() {
                         </div>
                     </div>
                     <div className="panel-actions">
-                        <span className="badge-live"><span className="dot-live" />Canlı Takip</span>
+                        {view === 'orders' && <span className="badge-live"><span className="dot-live" />Canlı Takip</span>}
                         <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={14} />Çıkış</button>
                     </div>
                 </div>
 
+                {/* GÖRÜNÜM SEKMELERİ */}
+                <div className="tabs">
+                    <button onClick={() => setView('orders')} className={`tab ${view === 'orders' ? 'active' : ''}`}>Açık Hesaplar</button>
+                    <button onClick={() => setView('summary')} className={`tab ${view === 'summary' ? 'active' : ''}`}>Gün Özeti</button>
+                </div>
+
                 <div className="panel-body">
-                    {orders.length === 0 ? (
+                    {view === 'summary' ? (
+                        <CashierSummary onAuthError={handleSummaryAuthError} />
+                    ) : orders.length === 0 ? (
                         <div className="empty">
                             <div className="empty-icon"><IconCloche size={30} /></div>
                             <h3>Şu an açık masanız yok</h3>

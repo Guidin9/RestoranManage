@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('abilities:cashier')->group(function () {
         Route::get('/cashier/orders', [OrderController::class, 'activeOrders']);
         Route::post('/cashier/orders/{id}/pay', [OrderController::class, 'closeOrder']);
+        Route::get('/cashier/summary', [OrderController::class, 'dailySummary']);
     });
 
     // 🤵 Garson (admin token'ı da bu yetkiye sahip)
