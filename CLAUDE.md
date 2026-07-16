@@ -95,7 +95,9 @@ Frontend tokens live in localStorage (`admin_token`, `cashier_token`, `waiter_to
 
 Every screen imports `apiFetch` from `src/api.js`, which owns the base URL (`VITE_API_URL`, falling back to `http://127.0.0.1:8000`), attaches `Authorization: Bearer`, and converts 401/403 into an `UnauthorizedError` after clearing the stored token. Screens catch that to drop back to their login form. Don't reintroduce bare `fetch` against the API — the one legitimate raw `fetch` is the ImgBB upload, which is a third-party host.
 
-CORS is wide open (`allowed_origins: ['*']`) and must keep allowing the `authorization` header, or every authenticated request fails in the browser.
+CORS is wide open (`allowed_origins: ['*']`) and must keep allowing the `authorization` header, or every authenticated request fails in the browser. It only actually matters in dev: the SPA on :5173 is cross-origin against the API on :8000. In production `Caddyfile` proxies `/api/*` to the backend from the same host, so `VITE_API_URL` is just the site's own origin and requests are same-origin.
+
+Production topology is four containers — `caddy` (terminates TLS, routes `/api/*`, `/up`, `/storage/*` to backend, everything else to frontend), `frontend`, `backend`, `db`. Only Caddy publishes ports; the backend is unreachable from outside the Docker network. Because TLS ends at Caddy, `bootstrap/app.php` sets `trustProxies(at: '*')` — without it `asset()` emits `http://` URLs that a HTTPS page blocks.
 
 Cashier and Waiter poll their endpoints on a 3–5s `setInterval`; there is no websocket/broadcast layer.
 

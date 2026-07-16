@@ -20,6 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
         ]);
+
+        // Uygulama Caddy'nin arkasında çalışır ve TLS'i Caddy sonlandırır; bu yüzden
+        // Laravel isteği "http" olarak görür. X-Forwarded-* başlıklarına güvenmezsek
+        // asset() ile üretilen eski görsel adresleri http:// çıkar ve HTTPS sayfada
+        // mixed-content olarak bloklanır. Backend porta dışarı açılmadığı, yalnızca
+        // Docker ağı üzerinden Caddy'den eriştiği için '*' burada güvenlidir.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -56,11 +56,21 @@ Testler: `php artisan test` (Pest, SQLite in-memory — MySQL gerekmez).
 
 ## Docker ile yayına alma
 
+Dört konteyner: `caddy` (HTTPS + yönlendirme), `frontend` (nginx + React), `backend`
+(Laravel), `db` (MySQL). Dışarıya yalnızca Caddy açıktır; API ile arayüz aynı adresten
+servis edilir (`/api/*` Caddy tarafından backend'e proxy'lenir), bu yüzden ayrı bir
+`api.*` alt alan adı gerekmez.
+
+**Önkoşul — sunucunun bir alan adı olmalı.** Sertifika çıplak IP'ye alınamaz. Ücretsiz
+yolu: Azure Portal > VM > Overview > DNS name > *Configure* ile bir etiket verin;
+`restoranim.westeurope.cloudapp.azure.com` gibi bir ad alırsınız. Azure NSG'de **80 ve
+443** dışarı açık olsun (80 sertifika doğrulaması için gerekir), 3306 kapalı kalsın.
+
 ```bash
 git clone https://github.com/Guidin9/RestoranManage.git
 cd RestoranManage
 cp .env.example .env           # kökteki .env — Docker Compose bunu okur
-# .env'i doldurun (APP_KEY, şifreler, VITE_API_URL zorunlu)
+# .env'i doldurun: SITE_ADDRESS, APP_KEY, DB_PASSWORD, ADMIN_PASSWORD, CASHIER_PASSWORD
 docker compose up -d --build
 docker compose exec backend php artisan migrate --force
 docker compose exec backend php artisan db:seed --class=StaffSeeder
@@ -69,15 +79,22 @@ docker compose exec backend php artisan db:seed --class=StaffSeeder
 `APP_KEY` üretmek için: `docker compose run --rm backend php artisan key:generate --show`
 
 Zorunlu değişkenler tanımsızsa Compose sessizce başlamak yerine anlaşılır bir hata verir.
+Sertifikanın alındığını görmek için: `docker compose logs caddy`.
 
 ### Dikkat edilecekler
 
-- **`VITE_API_URL` derleme anında gömülür.** Değiştirdikten sonra `docker compose up -d --build`
-  şart; sadece restart etmek hiçbir şeyi değiştirmez.
-- **MySQL portu** `127.0.0.1:3306`'a bağlıdır, dışarı açık değildir. Sunucu güvenlik
-  duvarında (Azure NSG vb.) yalnızca 80/443 açık olsun.
-- **QR kodlar** panelin açıldığı adresi (`window.location.origin`) hedefler. HTTPS'i
-  QR çıktısı almadan **önce** kurun, yoksa basılan kodlar yanlış adrese gider.
+- **`SITE_ADDRESS` sadece host adıdır** — başına `https://`, sonuna `/` koymayın.
+  `APP_URL` ve `VITE_API_URL` bundan türetilir, ayrıca elle girilmez.
+- **`VITE_API_URL` derleme anında gömülür.** `SITE_ADDRESS` veya IMGBB anahtarını
+  değiştirdikten sonra `docker compose up -d --build` şart; sadece restart etmek
+  hiçbir şeyi değiştirmez.
+- **`caddy_data` volume'ünü silmeyin** — sertifikalar orada durur. Silinirse Let's
+  Encrypt'ten yeniden istenir ve haftalık limite takılabilirsiniz.
+- **MySQL portu** `127.0.0.1:3306`'a bağlıdır, dışarı açık değildir. `backend` ve
+  `frontend` ise hiç porta bağlanmaz; onlara sadece Caddy üzerinden erişilir.
+- **QR kodlar** panelin açıldığı adresi (`window.location.origin`) hedefler. QR
+  çıktısı almadan **önce** HTTPS'in çalıştığından emin olun; sonradan adres
+  değişirse basılı kodların tamamı geçersiz olur.
 
 ## Mimari notları
 

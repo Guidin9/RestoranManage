@@ -1,8 +1,32 @@
 # Değerler bu dosyanın yanındaki .env dosyasından okunur (.env.example'ı kopyalayın).
 # ${VAR:?...} yazımı, değişken tanımsızsa compose'u sessizce başlatmak yerine
 # anlaşılır bir hata ile durdurur.
+#
+# Dışarıya yalnızca caddy açıktır (80/443). backend ve frontend porta bağlanmaz;
+# onlara sadece Docker ağı üzerinden Caddy erişir.
 
 services:
+  # HTTPS sonlandırma ve yönlendirme. Sertifikayı Let's Encrypt'ten otomatik alır.
+  caddy:
+    image: caddy:2-alpine
+    container_name: qrmenu_caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Sadece host adı — başına https:// koymayın. Caddy sertifikayı bu ada alır.
+      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS gerekli - orn. restoranim.westeurope.cloudapp.azure.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Sertifikalar burada durur. Bu volume silinirse Let's Encrypt'ten
+      # yeniden sertifika istenir ve haftalık limite takılabilirsiniz.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+
   # MySQL Veritabanı Konteyneri
   db:
     image: mysql:8.0
@@ -24,8 +48,6 @@ services:
       context: ./Qr_menu
     container_name: qrmenu_backend
     restart: always
-    ports:
-      - "8000:80"
     depends_on:
       - db
     environment:
@@ -36,7 +58,8 @@ services:
       APP_ENV: ${APP_ENV:-production}
       APP_KEY: ${APP_KEY:?APP_KEY gerekli - "php artisan key:generate --show" ile uretip .env'e ekleyin}
       APP_DEBUG: ${APP_DEBUG:-false}
-      APP_URL: ${APP_URL:-http://localhost:8000}
+      # SITE_ADDRESS'ten türer; ayrıca elle girilmez ki ikisi birbirini tutmasın diye bir hata olmasın.
+      APP_URL: https://${SITE_ADDRESS}
 
       DB_CONNECTION: mysql
       DB_HOST: db
@@ -61,17 +84,20 @@ services:
     build:
       context: ./qr-menu-frontend
       args:
-        # DİKKAT: Vite değişkenleri DERLEME anında gömülür. Bunu değiştirdikten
-        # sonra mutlaka "docker compose up -d --build" ile yeniden derleyin;
+        # DİKKAT: Vite değişkenleri DERLEME anında gömülür. SITE_ADDRESS veya
+        # IMGBB anahtarını değiştirdikten sonra mutlaka "docker compose up -d --build";
         # sadece restart etmek hiçbir şeyi değiştirmez.
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
+        #
+        # API ile SPA aynı adresten (Caddy) servis edildiği için burası site
+        # adresinin kendisidir; ayrı bir api.* alt alan adı gerekmez.
+        - VITE_API_URL=https://${SITE_ADDRESS}
         - VITE_IMGBB_API_KEY=${VITE_IMGBB_API_KEY:-}
     container_name: qrmenu_frontend
     restart: always
-    ports:
-      - "80:80"
     depends_on:
       - backend
 
 volumes:
   db_data:
+  caddy_data:
+  caddy_config:

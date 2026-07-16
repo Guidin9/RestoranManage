@@ -1,0 +1,30 @@
+# Tek giriş noktası. Caddy 80/443'ü dinler, Let's Encrypt sertifikasını
+# {$SITE_ADDRESS} için otomatik alır ve yeniler; http -> https yönlendirmesini
+# kendisi yapar. Sertifika alınabilmesi için Azure NSG'de 80 ve 443 dışarıya
+# açık olmalı (ACME doğrulaması 80'i kullanır).
+#
+# backend ve frontend konteynerleri porta açılmaz; buraya sadece Docker ağı
+# üzerinden erişilir.
+
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# Laravel'e gidenler: API uçları, health check ve eski yerel ürün görselleri.
+	handle /api/* {
+		reverse_proxy backend:80
+	}
+
+	handle /up {
+		reverse_proxy backend:80
+	}
+
+	handle /storage/* {
+		reverse_proxy backend:80
+	}
+
+	# Geri kalan her şey React SPA'ya gider. /cashier, /waiter, /admin
+	# adreslerinin index.html'e düşürülmesini frontend'in kendi nginx'i yapar.
+	handle {
+		reverse_proxy frontend:80
+	}
+}
