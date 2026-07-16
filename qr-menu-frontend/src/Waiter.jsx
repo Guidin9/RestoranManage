@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
+import { IconPlus, IconMinus, IconX, IconUser, IconLogout, IconLogin, IconCalendar } from './icons';
 
 function Waiter() {
     // Token yoksa kayıtlı garson bilgisi de anlamsız; ikisini birlikte değerlendiriyoruz.
@@ -114,24 +115,32 @@ function Waiter() {
             });
     };
 
+    // Adisyon toplamı (yalnızca görünüm için)
+    const orderItems = selectedTable?.active_order?.items || [];
+    const orderTotal = orderItems.reduce((sum, item) => sum + item.price_at_sale * item.quantity, 0).toFixed(2);
+
     // 🔴 EĞER GİRİŞ YAPILMADIYSA: LOGIN EKRANI
     if (!waiterInfo) {
         return (
             <div className="login-wrap">
                 <form onSubmit={handleLogin} className="login-card">
-                    <span className="login-emoji">🤵</span>
-                    <h2>Garson Girişi</h2>
-                    <p className="login-sub">Masa haritasına erişmek için giriş yapın</p>
-                    {loginError && <div className="alert">{loginError}</div>}
-                    <div className="field">
-                        <label className="label">Kullanıcı Adı</label>
-                        <input type="text" className="input" value={username} onChange={e => setUsername(e.target.value)} required placeholder="ahmet" />
+                    <div className="login-head">
+                        <div className="login-arch">G</div>
+                        <h2>Garson Girişi</h2>
+                        <p className="login-sub">Masalarınızı yönetmek için giriş yapın</p>
                     </div>
-                    <div className="field">
-                        <label className="label">Şifre</label>
-                        <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••" />
+                    <div className="login-body">
+                        {loginError && <div className="alert">{loginError}</div>}
+                        <div className="field">
+                            <label className="label">Kullanıcı Adı</label>
+                            <input type="text" className="input" value={username} onChange={e => setUsername(e.target.value)} required placeholder="kullanıcı adınız" />
+                        </div>
+                        <div className="field" style={{ marginBottom: 20 }}>
+                            <label className="label">Şifre</label>
+                            <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
+                        </div>
+                        <button type="submit" className="btn btn-success btn-block">Giriş Yap<IconLogin /></button>
                     </div>
-                    <button type="submit" className="btn btn-primary btn-block">Giriş Yap →</button>
                 </form>
             </div>
         );
@@ -140,43 +149,48 @@ function Waiter() {
     // 🟢 EĞER GİRİŞ YAPILDIYSA: FULL MASA HARİTASI
     return (
         <div className="page">
+            <div className="panel reveal">
 
-            {/* ÜST BAR */}
-            <div className="topbar">
-                <div>
-                    <h2>🤵 Garson Masaları</h2>
-                    <span className="muted" style={{ fontSize: 14 }}>
-                        Personel: <strong style={{ color: 'var(--text-strong)' }}>{waiterInfo.name}</strong> (#{waiterInfo.id})
-                    </span>
-                </div>
-                <button onClick={handleLogout} className="btn btn-danger btn-sm">🔒 Çıkış</button>
-            </div>
-
-            {/* TÜM MASALARIN LISTESİ (GRID) */}
-            <div className="grid grid-tables">
-                {tables.map((table, ti) => (
-                    <div
-                        key={table.id}
-                        onClick={() => setSelectedTable(table)}
-                        className={`card table-card reveal ${table.is_occupied ? 'table-card--busy' : 'table-card--free'}`}
-                        style={{ '--i': ti }}
-                    >
-                        <div className="row-between" style={{ marginBottom: 10 }}>
-                            <h3 style={{ margin: 0 }}>{table.table_number}</h3>
-                            <span className={`badge ${table.is_occupied ? 'badge-danger' : 'badge-success'}`}>
-                                {table.is_occupied ? 'DOLU' : 'BOŞ'}
-                            </span>
+                {/* ÜST BAR */}
+                <div className="panel-head">
+                    <div className="panel-head-left">
+                        <div className="panel-icon"><IconUser size={22} sw={1.5} /></div>
+                        <div>
+                            <div className="panel-title">Garson Masaları</div>
+                            <div className="panel-sub">{waiterInfo.name} · #{waiterInfo.id}</div>
                         </div>
-
-                        {table.is_occupied ? (
-                            <p className="muted" style={{ fontSize: 13 }}>
-                                Adisyon: <strong style={{ color: 'var(--text-strong)' }}>{table.active_order?.items?.length || 0} Kalem Ürün</strong>
-                            </p>
-                        ) : (
-                            <p style={{ fontSize: 13, color: 'var(--success)' }}>Sipariş almak için tıkla</p>
-                        )}
                     </div>
-                ))}
+                    <div className="panel-actions">
+                        <span className="badge-live"><span className="dot-live" />Canlı takip</span>
+                        <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={14} />Çıkış</button>
+                    </div>
+                </div>
+
+                {/* TÜM MASALARIN LISTESİ (GRID) */}
+                <div className="panel-body">
+                    <div className="grid grid-tables">
+                        {tables.map((table, ti) => (
+                            <button
+                                key={table.id}
+                                onClick={() => setSelectedTable(table)}
+                                className={`table-card reveal ${table.is_occupied ? 'table-card--busy' : 'table-card--free'}`}
+                                style={{ '--i': ti }}
+                            >
+                                <div className="row-between">
+                                    <span className="table-name">{table.table_number}</span>
+                                    <span className={`table-status ${table.is_occupied ? 'table-status--busy' : 'table-status--free'}`}>
+                                        {table.is_occupied ? 'DOLU' : 'BOŞ'}
+                                    </span>
+                                </div>
+                                <div className="table-meta">
+                                    {table.is_occupied
+                                        ? `${table.active_order?.items?.length || 0} kalem ürün`
+                                        : 'sipariş almak için dokunun'}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* MASAYA TIKLANDIĞINDA AÇILAN SİPARİŞ / ADİSYON MODALI */}
@@ -184,55 +198,53 @@ function Waiter() {
                 <div className="modal-overlay" onClick={() => setSelectedTable(null)}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
 
-                        <div className="row-between" style={{ paddingBottom: 12, borderBottom: '1px solid var(--glass-border)' }}>
-                            <h3 style={{ margin: 0 }}>{selectedTable.table_number} — Adisyon</h3>
-                            <button onClick={() => setSelectedTable(null)} className="modal-close">✖</button>
+                        <div className="modal-head">
+                            <span className="modal-title">{selectedTable.table_number}</span>
+                            <button onClick={() => setSelectedTable(null)} className="modal-close"><IconX size={17} /></button>
                         </div>
 
-                        {/* BÖLÜM 1: MEVCUT ADİSYON & ÜRÜN SİLME */}
-                        <div className="subpanel">
-                            <h4 style={{ marginTop: 0 }}>📋 Masadaki Güncel Adisyon</h4>
+                        <div className="modal-body">
 
-                            {selectedTable.is_occupied && selectedTable.active_order?.items?.length > 0 ? (
-                                <ul className="prod-list">
-                                    {selectedTable.active_order.items.map(item => (
-                                        <li key={item.id} className="row-between" style={{ padding: '8px 0', borderBottom: '1px solid var(--glass-border)' }}>
-                                            <span>
-                                                <strong>{item.quantity}x</strong> {item.product ? item.product.name : 'Ürün'} — {(item.price_at_sale * item.quantity).toFixed(2)} TL
-                                            </span>
-                                            <button onClick={() => handleRemoveItem(item.id)} className="btn btn-danger btn-sm">🗑️ Eksilt</button>
-                                        </li>
+                            {/* BÖLÜM 1: MEVCUT ADİSYON & ÜRÜN SİLME */}
+                            <h4 className="section-title"><IconCalendar />Masadaki Güncel Adisyon</h4>
+
+                            {selectedTable.is_occupied && orderItems.length > 0 ? (
+                                <div className="stack" style={{ gap: 8, marginBottom: 22 }}>
+                                    {orderItems.map(item => (
+                                        <div key={item.id} className="line-row">
+                                            <span className="line-qty">{item.quantity}×</span>
+                                            <span className="line-name">{item.product ? item.product.name : 'Ürün'}</span>
+                                            <span className="line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
+                                            <button onClick={() => handleRemoveItem(item.id)} className="btn btn-danger btn-sm"><IconMinus size={13} />Eksilt</button>
+                                        </div>
                                     ))}
-                                </ul>
+                                    <div className="total-row"><span>Toplam</span><span>{orderTotal} ₺</span></div>
+                                </div>
                             ) : (
-                                <p className="muted">Bu masada henüz açık bir adisyon yok. Aşağıdan ürün ekleyebilirsiniz.</p>
+                                <div className="hint-box" style={{ marginBottom: 22 }}>Bu masada henüz ürün yok — aşağıdan ekleyin.</div>
                             )}
-                        </div>
 
-                        {/* BÖLÜM 2: MASAYA MENÜDEN ÜRÜN EKLEME */}
-                        <div style={{ marginTop: 20 }}>
-                            <h4 style={{ marginBottom: 12, color: 'var(--info)' }}>➕ Masaya Ürün Ekle</h4>
+                            {/* BÖLÜM 2: MASAYA MENÜDEN ÜRÜN EKLEME */}
+                            <h4 className="section-title section-title--add"><IconPlus size={15} />Masaya Ürün Ekle</h4>
 
                             {menu.map(category => (
-                                <div key={category.id} className="subpanel" style={{ marginTop: 12 }}>
-                                    <h5 className="cat-title" style={{ marginTop: 0, fontSize: 15 }}>{category.name}</h5>
-                                    <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
+                                <div key={category.id}>
+                                    <div className="section-label">{category.name}</div>
+                                    <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
                                         {category.products.map(product => (
-                                            <div key={product.id} className="row-between" style={{ padding: 10, borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', fontSize: 13 }}>
-                                                <div>
-                                                    <div><strong>{product.name}</strong></div>
-                                                    <small className="prod-price">{product.price} TL</small>
+                                            <div key={product.id} className="add-chip">
+                                                <div className="add-chip-body">
+                                                    <div className="add-chip-name">{product.name}</div>
+                                                    <div className="add-chip-price">{product.price} ₺</div>
                                                 </div>
-                                                <button onClick={() => handleAddProduct(selectedTable.id, product.id)} className="btn btn-success btn-sm">+ Ekle</button>
+                                                <button onClick={() => handleAddProduct(selectedTable.id, product.id)} className="btn btn-success btn-sm"><IconPlus size={12} />Ekle</button>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             ))}
-                        </div>
 
-                        <div style={{ marginTop: 20 }}>
-                            <button onClick={() => setSelectedTable(null)} className="btn btn-block">Pencereyi Kapat</button>
+                            <button onClick={() => setSelectedTable(null)} className="btn btn-ink btn-block" style={{ marginTop: 22 }}>Pencereyi Kapat</button>
                         </div>
 
                     </div>

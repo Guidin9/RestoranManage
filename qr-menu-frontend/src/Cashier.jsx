@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
+import { IconCard, IconLogout, IconLogin, IconCloche } from './icons';
 
 function Cashier() {
     // Oturum, kasa token'ının varlığına bağlı.
@@ -13,6 +14,9 @@ function Cashier() {
     // Kasa Verileri
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    // Hesap kapatma onayı bekleyen sipariş (modal)
+    const [closingOrder, setClosingOrder] = useState(null);
 
     // 1. MANTIK: Giriş Yapma İşlemi
     const handleLogin = (e) => {
@@ -72,13 +76,11 @@ function Cashier() {
     }, [isAuthenticated]);
 
     const handlePayOrder = (orderId) => {
-        if (!window.confirm("Bu masanın hesabını kapatmak istediğinize emin misiniz?")) return;
-
         apiFetch(`/api/cashier/orders/${orderId}/pay`, { role: 'cashier', method: 'POST' })
             .then(res => {
                 if (res.success) {
-                    alert("Hesap başarıyla kapatıldı!");
                     setOrders(prev => prev.filter(order => order.id !== orderId));
+                    setClosingOrder(null);
                 }
             })
             .catch(err => {
@@ -99,37 +101,37 @@ function Cashier() {
         return (
             <div className="login-wrap">
                 <form onSubmit={handleLogin} className="login-card">
-                    <span className="login-emoji">🔐</span>
-                    <h2>Kasiyer Girişi</h2>
-                    <p className="login-sub">Adisyon paneline erişmek için giriş yapın</p>
-
-                    {loginError && <div className="alert">{loginError}</div>}
-
-                    <div className="field">
-                        <label className="label">Kullanıcı Adı</label>
-                        <input
-                            type="text"
-                            className="input"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                            placeholder="kasa"
-                        />
+                    <div className="login-head">
+                        <div className="login-arch">K</div>
+                        <h2>Kasiyer Girişi</h2>
+                        <p className="login-sub">Açık hesapları görmek için giriş yapın</p>
                     </div>
-
-                    <div className="field">
-                        <label className="label">Şifre</label>
-                        <input
-                            type="password"
-                            className="input"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            placeholder="••••••"
-                        />
+                    <div className="login-body">
+                        {loginError && <div className="alert">{loginError}</div>}
+                        <div className="field">
+                            <label className="label">Kullanıcı Adı</label>
+                            <input
+                                type="text"
+                                className="input"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                                placeholder="kullanıcı adınız"
+                            />
+                        </div>
+                        <div className="field" style={{ marginBottom: 20 }}>
+                            <label className="label">Şifre</label>
+                            <input
+                                type="password"
+                                className="input"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                placeholder="••••••••"
+                            />
+                        </div>
+                        <button type="submit" className="btn btn-success btn-block">Giriş Yap<IconLogin /></button>
                     </div>
-
-                    <button type="submit" className="btn btn-primary btn-block">Giriş Yap →</button>
                 </form>
             </div>
         );
@@ -138,53 +140,80 @@ function Cashier() {
     // 🟢 EĞER GİRİŞ YAPILDIYSA: KASA PANELİNİ GÖSTER
     return (
         <div className="page">
-            <div className="topbar">
-                <h2>👨‍🍳 Kasa & Mutfak Paneli</h2>
-                <div className="stepper">
-                    <span className="badge badge-success"><span className="dot-live" /> Canlı Takip</span>
-                    <button onClick={handleLogout} className="btn btn-danger btn-sm">🔒 Çıkış</button>
+            <div className="panel reveal">
+
+                <div className="panel-head">
+                    <div className="panel-head-left">
+                        <div className="panel-icon"><IconCard size={22} sw={1.5} /></div>
+                        <div>
+                            <div className="panel-title">Kasa & Mutfak Paneli</div>
+                            <div className="panel-sub">Açık hesaplar canlı izleniyor</div>
+                        </div>
+                    </div>
+                    <div className="panel-actions">
+                        <span className="badge-live"><span className="dot-live" />Canlı Takip</span>
+                        <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={14} />Çıkış</button>
+                    </div>
+                </div>
+
+                <div className="panel-body">
+                    {orders.length === 0 ? (
+                        <div className="empty">
+                            <div className="empty-icon"><IconCloche size={30} /></div>
+                            <h3>Şu an açık masanız yok</h3>
+                            <p>Yeni siparişler geldikçe burada listelenecek.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cards">
+                            {orders.map((order, oi) => (
+                                <div key={order.id} className="order-card reveal" style={{ '--i': oi }}>
+                                    <div className="order-head">
+                                        <span className="order-table">
+                                            {order.table?.table_number || `Masa ID: ${order.table_id}`}
+                                        </span>
+                                        <span className="order-time">
+                                            açılış {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+
+                                    <ul className="order-lines">
+                                        {order.items.map(item => (
+                                            <li key={item.id} className="order-line">
+                                                <span className="line-qty">{item.quantity}×</span>
+                                                <span className="order-line-name">{item.product ? item.product.name : 'Ürün'}</span>
+                                                <span className="order-line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <div className="order-total">
+                                        <span className="order-total-label">Toplam</span>
+                                        <span className="order-total-value">{calculateOrderTotal(order.items)} ₺</span>
+                                    </div>
+                                    <button onClick={() => setClosingOrder(order)} className="order-pay">
+                                        <IconCard size={16} />Hesabı Kapat / Öde
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {orders.length === 0 ? (
-                <div className="empty">
-                    <span className="empty-emoji">🍽️</span>
-                    <h3>Şu an açık masanız yok</h3>
-                    <p>Müşteriler QR kod ile sipariş verdiğinde adisyonlar buraya canlı düşecektir.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cards">
-                    {orders.map((order, oi) => (
-                        <div key={order.id} className="card reveal" style={{ '--i': oi }}>
-                            <div className="row-between" style={{ paddingBottom: 12, borderBottom: '1px solid var(--glass-border)' }}>
-                                <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-strong)' }}>
-                                    {order.table?.table_number || `Masa ID: ${order.table_id}`}
-                                </span>
-                                <span className="muted" style={{ fontSize: 12 }}>
-                                    {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </div>
-
-                            <ul className="prod-list" style={{ margin: '12px 0', minHeight: 90 }}>
-                                {order.items.map(item => (
-                                    <li key={item.id} className="row-between" style={{ padding: '6px 0', fontSize: 15 }}>
-                                        <span><strong>{item.quantity}x</strong> {item.product ? item.product.name : 'Ürün'}</span>
-                                        <span className="muted">{(item.price_at_sale * item.quantity).toFixed(2)} TL</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: 12 }}>
-                                <div className="row-between" style={{ marginBottom: 12 }}>
-                                    <span style={{ fontWeight: 600 }}>Toplam Tutar</span>
-                                    <span className="cart-total">{calculateOrderTotal(order.items)} TL</span>
-                                </div>
-                                <button onClick={() => handlePayOrder(order.id)} className="btn btn-success btn-block">
-                                    💳 Hesabı Kapat / Öde
-                                </button>
-                            </div>
+            {/* HESAP KAPATMA ONAY MODALI */}
+            {closingOrder && (
+                <div className="modal-overlay" onClick={() => setClosingOrder(null)}>
+                    <div className="modal modal--dialog" onClick={e => e.stopPropagation()}>
+                        <div className="confirm-icon confirm-icon--soft"><IconCard size={28} sw={1.6} /></div>
+                        <h3 className="confirm-title">Hesabı kapat</h3>
+                        <p className="confirm-sub">
+                            {closingOrder.table?.table_number || `Masa ID: ${closingOrder.table_id}`} · <b>{calculateOrderTotal(closingOrder.items)} ₺</b> tahsil edilecek ve masa boşaltılacak.
+                        </p>
+                        <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+                            <button onClick={() => setClosingOrder(null)} className="btn" style={{ flex: 1 }}>Vazgeç</button>
+                            <button onClick={() => handlePayOrder(closingOrder.id)} className="btn btn-success" style={{ flex: 1.4 }}>Öde & Kapat</button>
                         </div>
-                    ))}
+                    </div>
                 </div>
             )}
         </div>

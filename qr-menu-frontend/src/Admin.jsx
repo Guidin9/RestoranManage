@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, getToken, setToken, clearToken, IMGBB_API_KEY, UnauthorizedError } from './api';
+import { IconPlus, IconTrash, IconUser, IconShield, IconLogout, IconLogin, IconLink, IconPrinter, IconMail } from './icons';
 
 // QR kodu panelin açıldığı adresi hedefler; canlıda otomatik olarak doğru domain olur.
 const menuUrlFor = (qrCode) => `${window.location.origin}/?table=${qrCode}`;
+const qrImageFor = (qrCode, size) => `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(menuUrlFor(qrCode))}`;
 
 function Admin() {
     const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => !!getToken('admin'));
@@ -229,19 +231,23 @@ function Admin() {
         return (
             <div className="login-wrap">
                 <form onSubmit={handleLogin} className="login-card">
-                    <span className="login-emoji">👑</span>
-                    <h2>Admin Dashboard</h2>
-                    <p className="login-sub">Yönetici kontrol paneline giriş</p>
-                    {error && <div className="alert">{error}</div>}
-                    <div className="field">
-                        <label className="label">Kullanıcı Adı</label>
-                        <input type="text" className="input" value={username} onChange={e => setUsername(e.target.value)} required placeholder="admin" />
+                    <div className="login-head">
+                        <div className="login-arch">A</div>
+                        <h2>Admin Dashboard</h2>
+                        <p className="login-sub">Yönetici kontrol paneline giriş</p>
                     </div>
-                    <div className="field">
-                        <label className="label">Şifre</label>
-                        <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••" />
+                    <div className="login-body">
+                        {error && <div className="alert">{error}</div>}
+                        <div className="field">
+                            <label className="label">Kullanıcı Adı</label>
+                            <input type="text" className="input" value={username} onChange={e => setUsername(e.target.value)} required placeholder="kullanıcı adınız" />
+                        </div>
+                        <div className="field" style={{ marginBottom: 20 }}>
+                            <label className="label">Şifre</label>
+                            <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
+                        </div>
+                        <button type="submit" className="btn btn-success btn-block">Giriş Yap<IconLogin /></button>
                     </div>
-                    <button type="submit" className="btn btn-primary btn-block">Giriş Yap →</button>
                 </form>
             </div>
         );
@@ -249,139 +255,172 @@ function Admin() {
 
     return (
         <div className="page">
-            <div className="topbar">
-                <h2>👑 Yönetici Kontrol Paneli</h2>
-                <button onClick={handleLogout} className="btn btn-danger btn-sm">🔒 Çıkış Yap</button>
-            </div>
+            <div className="panel reveal">
 
-            {/* SEKMELER */}
-            <div className="tabs">
-                <button onClick={() => setActiveTab('waiters')} className={`tab ${activeTab === 'waiters' ? 'active' : ''}`}>🤵 Garson Yönetimi</button>
-                <button onClick={() => setActiveTab('tables')} className={`tab ${activeTab === 'tables' ? 'active' : ''}`}>🪑 Masa Yönetimi</button>
-                <button onClick={() => setActiveTab('menu')} className={`tab ${activeTab === 'menu' ? 'active' : ''}`}>🍔 Menü & Kategori</button>
-            </div>
-
-            {/* SEKME 1: GARSON YÖNETİMİ */}
-            {activeTab === 'waiters' && (
-                <div className="reveal">
-                    <h3 style={{ marginBottom: 12 }}>Yeni Garson Ekle</h3>
-                    <form onSubmit={addWaiter} className="form-inline">
-                        <input type="text" className="input" placeholder="Ad Soyad" value={newWaiter.name} onChange={e => setNewWaiter({ ...newWaiter, name: e.target.value })} required />
-                        <input type="text" className="input" placeholder="Kullanıcı Adı" value={newWaiter.username} onChange={e => setNewWaiter({ ...newWaiter, username: e.target.value })} required />
-                        <input type="password" className="input" placeholder="Şifre" value={newWaiter.password} onChange={e => setNewWaiter({ ...newWaiter, password: e.target.value })} required />
-                        <button type="submit" className="btn btn-success">+ Ekle</button>
-                    </form>
-
-                    <h3 style={{ marginBottom: 12 }}>Mevcut Garsonlar</h3>
-                    <ul className="list-plain" style={{ maxWidth: 460 }}>
-                        {waiters.map(w => (
-                            <li key={w.id}>
-                                <span><strong>{w.name}</strong> <span className="muted">@{w.username}</span></span>
-                                <button onClick={() => deleteWaiter(w.id)} className="btn btn-danger btn-sm">Sil</button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* SEKME 2: MASA YÖNETİMİ */}
-            {activeTab === 'tables' && (
-                <div className="reveal">
-                    <h3 style={{ marginBottom: 12 }}>Yeni Masa Ekle</h3>
-                    <form onSubmit={addTable} className="form-inline">
-                        <input type="text" className="input" placeholder="Örn: Masa 6 veya Teras 1" value={newTableNumber} onChange={e => setNewTableNumber(e.target.value)} required />
-                        <button type="submit" className="btn btn-success">+ Masa Oluştur</button>
-                    </form>
-
-                    <h3 style={{ marginBottom: 12 }}>Masalar & QR Adresleri</h3>
-                    <div className="grid grid-wide">
-                        {tables.map((t, ti) => (
-                            <div key={t.id} className="card reveal" style={{ '--i': ti }}>
-                                <div className="row-between" style={{ marginBottom: 12 }}>
-                                    <strong style={{ fontSize: 18, color: 'var(--text-strong)' }}>{t.table_number}</strong>
-                                    <button onClick={() => deleteTable(t.id)} className="btn btn-danger btn-sm">Masayı Sil</button>
-                                </div>
-
-                                {/* Linkler ve QR Çıktı Butonu */}
-                                <div className="qr-box">
-                                    <a href={menuUrlFor(t.qr_code)} target="_blank" rel="noreferrer" className="link">🔗 Test Et ↗</a>
-                                    <a
-                                        href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(menuUrlFor(t.qr_code))}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="btn btn-success btn-sm"
-                                    >
-                                        🖨️ QR Çıkart
-                                    </a>
-                                </div>
-                            </div>
-                        ))}
+                <div className="panel-head">
+                    <div className="panel-head-left">
+                        <div className="panel-icon"><IconShield size={22} sw={1.5} /></div>
+                        <div>
+                            <div className="panel-title">Yönetici Kontrol Paneli</div>
+                            <div className="panel-sub">Garson · Masa · Menü yönetimi</div>
+                        </div>
                     </div>
+                    <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={14} />Çıkış</button>
                 </div>
-            )}
 
-            {/* SEKME 3: MENÜ & KATEGORİ YÖNETİMİ */}
-            {activeTab === 'menu' && (
-                <div className="reveal">
-                    {/* 📂 KATEGORİ EKLEME FORMU */}
-                    <h3 style={{ marginBottom: 12 }}>📂 Yeni Kategori Ekle</h3>
-                    <form onSubmit={addCategory} className="form-inline">
-                        <input type="text" className="input" placeholder="Kategori Adı (Örn: Tatlılar)" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} required />
-                        <button type="submit" className="btn btn-primary">+ Kategori Ekle</button>
-                    </form>
+                {/* SEKMELER */}
+                <div className="tabs">
+                    <button onClick={() => setActiveTab('waiters')} className={`tab ${activeTab === 'waiters' ? 'active' : ''}`}>Garson Yönetimi</button>
+                    <button onClick={() => setActiveTab('tables')} className={`tab ${activeTab === 'tables' ? 'active' : ''}`}>Masa Yönetimi</button>
+                    <button onClick={() => setActiveTab('menu')} className={`tab ${activeTab === 'menu' ? 'active' : ''}`}>Menü & Kategori</button>
+                </div>
 
-                    {/* 🍔 ÜRÜN EKLEME FORMU */}
-                    <h3 style={{ marginBottom: 12 }}>🍔 Yeni Ürün & Görsel Ekle</h3>
-                    <form onSubmit={addProduct} className="form-inline">
-                        <select className="select" value={newProduct.category_id} onChange={e => setNewProduct({ ...newProduct, category_id: e.target.value })} required>
-                            <option value="">Kategori Seçin</option>
-                            {menu.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                <div className="panel-body">
 
-                        <input type="text" className="input" placeholder="Ürün Adı" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} required />
-                        <input type="number" step="0.01" className="input" style={{ flex: '0 1 120px' }} placeholder="Fiyat (TL)" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} required />
+                    {/* SEKME 1: GARSON YÖNETİMİ */}
+                    {activeTab === 'waiters' && (
+                        <div className="reveal">
+                            <form onSubmit={addWaiter} className="form-box">
+                                <label className="field">
+                                    <span className="label">Ad Soyad</span>
+                                    <input type="text" className="input" placeholder="Ör. Ada Deniz" value={newWaiter.name} onChange={e => setNewWaiter({ ...newWaiter, name: e.target.value })} required />
+                                </label>
+                                <label className="field">
+                                    <span className="label">Kullanıcı Adı</span>
+                                    <input type="text" className="input" placeholder="ada" value={newWaiter.username} onChange={e => setNewWaiter({ ...newWaiter, username: e.target.value })} required />
+                                </label>
+                                <label className="field">
+                                    <span className="label">Şifre</span>
+                                    <input type="password" className="input" placeholder="••••••" value={newWaiter.password} onChange={e => setNewWaiter({ ...newWaiter, password: e.target.value })} required />
+                                </label>
+                                <button type="submit" className="btn btn-success"><IconPlus size={15} />Ekle</button>
+                            </form>
 
-                        <input id="productImageInput" type="file" accept="image/*" className="input" onChange={(e) => setImageFile(e.target.files[0])} />
-
-                        <button type="submit" className="btn btn-success">+ Ürün Ekle</button>
-                    </form>
-
-                    {/* 📜 MENÜ LİSTESİ */}
-                    <h3 style={{ marginBottom: 12 }}>Mevcut Menü & Kategoriler</h3>
-                    {menu.length === 0 && (
-                        <div className="empty"><span className="empty-emoji">📭</span><p>Henüz eklenmiş kategori veya ürün yok.</p></div>
+                            <div className="stack" style={{ gap: 9 }}>
+                                {waiters.map(w => (
+                                    <div key={w.id} className="staff-row">
+                                        <div className="avatar"><IconUser size={18} sw={1.6} /></div>
+                                        <div style={{ flex: 1 }}>
+                                            <div className="staff-name">{w.name}</div>
+                                            <div className="staff-user">@{w.username}</div>
+                                        </div>
+                                        <button onClick={() => deleteWaiter(w.id)} className="btn btn-danger btn-sm"><IconTrash size={13} />Sil</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     )}
 
-                    {menu.map((c, ci) => (
-                        <div key={c.id} className="card reveal" style={{ marginBottom: 20, '--i': ci }}>
-                            <div className="row-between" style={{ paddingBottom: 12, borderBottom: '1px solid var(--glass-border)', marginBottom: 12 }}>
-                                <h4 className="cat-title" style={{ margin: 0, fontSize: 18 }}>{c.name}</h4>
-                                <button onClick={() => deleteCategory(c.id)} className="btn btn-danger btn-sm">Kategoriyi Sil</button>
-                            </div>
+                    {/* SEKME 2: MASA YÖNETİMİ */}
+                    {activeTab === 'tables' && (
+                        <div className="reveal">
+                            <form onSubmit={addTable} className="form-box">
+                                <label className="field">
+                                    <span className="label">Masa Adı</span>
+                                    <input type="text" className="input" placeholder="Ör. Teras 3" value={newTableNumber} onChange={e => setNewTableNumber(e.target.value)} required />
+                                </label>
+                                <button type="submit" className="btn btn-success"><IconPlus size={15} />Masa Oluştur</button>
+                            </form>
 
-                            <ul className="prod-list">
-                                {c.products.length === 0 && <li className="muted" style={{ fontStyle: 'italic', borderBottom: 0 }}>Bu kategoride ürün yok.</li>}
-                                {c.products.map(p => (
-                                    <li key={p.id} className="prod-row">
-                                        <div className="prod-left">
-                                            {p.image_url ? (
-                                                <img src={p.image_url} alt={p.name} className="thumb-sm" />
-                                            ) : (
-                                                <div className="thumb-sm thumb-sm--empty">Resim<br />Yok</div>
-                                            )}
-                                            <div>
-                                                <strong style={{ color: 'var(--text-strong)' }}>{p.name}</strong>
-                                                <span className="prod-price" style={{ display: 'block' }}>{p.price} TL</span>
+                            <div className="grid grid-wide">
+                                {tables.map((t, ti) => (
+                                    <div key={t.id} className="table-admin-card reveal" style={{ '--i': ti }}>
+                                        <div className="row-between" style={{ marginBottom: 14 }}>
+                                            <span className="table-name">{t.table_number}</span>
+                                            <button onClick={() => deleteTable(t.id)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
+                                        </div>
+
+                                        {/* QR önizleme, test linki ve yazdırma çıktısı */}
+                                        <div className="qr-box">
+                                            <img className="qr-thumb" src={qrImageFor(t.qr_code, 104)} alt={`${t.table_number} QR`} />
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+                                                <a href={menuUrlFor(t.qr_code)} target="_blank" rel="noreferrer" className="link"><IconLink size={13} />Test Et</a>
+                                                <a href={qrImageFor(t.qr_code, 500)} target="_blank" rel="noreferrer" className="btn btn-ink btn-sm"><IconPrinter size={13} />QR Çıkart</a>
                                             </div>
                                         </div>
-                                        <button onClick={() => deleteProduct(p.id)} className="btn btn-danger btn-sm">Sil</button>
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
-                    ))}
+                    )}
+
+                    {/* SEKME 3: MENÜ & KATEGORİ YÖNETİMİ */}
+                    {activeTab === 'menu' && (
+                        <div className="reveal">
+                            {/* KATEGORİ EKLEME FORMU */}
+                            <form onSubmit={addCategory} className="form-box" style={{ marginBottom: 14 }}>
+                                <label className="field">
+                                    <span className="label">Yeni Kategori</span>
+                                    <input type="text" className="input" placeholder="Ör. İçecekler" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} required />
+                                </label>
+                                <button type="submit" className="btn btn-primary"><IconPlus size={15} />Kategori Ekle</button>
+                            </form>
+
+                            {/* ÜRÜN EKLEME FORMU */}
+                            <form onSubmit={addProduct} className="form-box" style={{ marginBottom: 22 }}>
+                                <label className="field" style={{ flex: '1 1 130px' }}>
+                                    <span className="label">Kategori</span>
+                                    <select className="select" value={newProduct.category_id} onChange={e => setNewProduct({ ...newProduct, category_id: e.target.value })} required>
+                                        <option value="">Kategori Seçin</option>
+                                        {menu.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </label>
+                                <label className="field" style={{ flex: '1.4 1 150px' }}>
+                                    <span className="label">Ürün Adı</span>
+                                    <input type="text" className="input" placeholder="Ör. Ege Salatası" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} required />
+                                </label>
+                                <label className="field" style={{ flex: '0.7 1 100px' }}>
+                                    <span className="label">Fiyat ₺</span>
+                                    <input type="number" step="0.01" className="input" placeholder="0" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} required />
+                                </label>
+                                <label className="field" style={{ flex: '1 1 130px' }}>
+                                    <span className="label">Görsel</span>
+                                    <input id="productImageInput" type="file" accept="image/*" className="input" onChange={(e) => setImageFile(e.target.files[0])} />
+                                </label>
+                                <button type="submit" className="btn btn-success"><IconPlus size={15} />Ürün Ekle</button>
+                            </form>
+
+                            {/* MENÜ LİSTESİ */}
+                            {menu.length === 0 && (
+                                <div className="empty">
+                                    <div className="empty-icon" style={{ color: 'var(--sea)' }}><IconMail size={26} /></div>
+                                    <h3>Henüz kategori veya ürün yok</h3>
+                                </div>
+                            )}
+
+                            <div className="stack" style={{ gap: 16 }}>
+                                {menu.map((c, ci) => (
+                                    <div key={c.id} className="cat-card reveal" style={{ '--i': ci }}>
+                                        <div className="cat-head">
+                                            <span className="cat-name">{c.name}</span>
+                                            <button onClick={() => deleteCategory(c.id)} className="btn btn-danger btn-sm">Kategoriyi Sil</button>
+                                        </div>
+
+                                        <div className="cat-items">
+                                            {c.products.length === 0 && (
+                                                <p className="muted" style={{ padding: '10px 5px', fontSize: 13, fontStyle: 'italic' }}>Bu kategoride ürün yok.</p>
+                                            )}
+                                            {c.products.map(p => (
+                                                <div key={p.id} className="item-row">
+                                                    {p.image_url ? (
+                                                        <img src={p.image_url} alt={p.name} className="thumb-sm" />
+                                                    ) : (
+                                                        <div className="thumb-sm thumb-sm--empty"><span>foto</span></div>
+                                                    )}
+                                                    <div className="item-name">{p.name}</div>
+                                                    <div className="item-price">{p.price} ₺</div>
+                                                    <button onClick={() => deleteProduct(p.id)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                 </div>
-            )}
+            </div>
         </div>
     );
 }
