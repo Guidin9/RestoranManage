@@ -97,46 +97,39 @@ function Cashier() {
     // 🔴 EĞER GİRİŞ YAPILMADIYSA: GİRİŞ EKRANINI GÖSTER
     if (!isAuthenticated) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', fontFamily: 'sans-serif' }}>
-                <form onSubmit={handleLogin} style={{ backgroundColor: '#fff', border: '1px solid #ddd', padding: '30px', borderRadius: '10px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', width: '100%', maxWidth: '350px' }}>
-                    <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#333' }}>🔐 Kasiyer Girişi</h2>
+            <div className="login-wrap">
+                <form onSubmit={handleLogin} className="login-card">
+                    <span className="login-emoji">🔐</span>
+                    <h2>Kasiyer Girişi</h2>
+                    <p className="login-sub">Adisyon paneline erişmek için giriş yapın</p>
 
-                    {loginError && (
-                        <div style={{ backgroundColor: '#f8d7da', color: '#721c24', padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '14px', textAlign: 'center' }}>
-                            {loginError}
-                        </div>
-                    )}
+                    {loginError && <div className="alert">{loginError}</div>}
 
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Kullanıcı Adı:</label>
+                    <div className="field">
+                        <label className="label">Kullanıcı Adı</label>
                         <input
                             type="text"
+                            className="input"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
-                            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', boxSizing: 'border-box' }}
                             placeholder="kasa"
                         />
                     </div>
 
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Şifre:</label>
+                    <div className="field">
+                        <label className="label">Şifre</label>
                         <input
                             type="password"
+                            className="input"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                            placeholder="123456"
+                            placeholder="••••••"
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        style={{ width: '100%', padding: '12px', backgroundColor: '#0d6efd', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px' }}
-                    >
-                        Giriş Yap
-                    </button>
+                    <button type="submit" className="btn btn-primary btn-block">Giriş Yap →</button>
                 </form>
             </div>
         );
@@ -144,66 +137,49 @@ function Cashier() {
 
     // 🟢 EĞER GİRİŞ YAPILDIYSA: KASA PANELİNİ GÖSTER
     return (
-        <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '15px' }}>
-                <h2>👨‍🍳 Kasa & Mutfak Canlı Adisyon Paneli</h2>
-
-                <div>
-          <span style={{ backgroundColor: '#28a745', color: 'white', padding: '6px 12px', borderRadius: '15px', fontSize: '14px', marginRight: '15px' }}>
-            ● Canlı Takip Açık
-          </span>
-                    <button
-                        onClick={handleLogout}
-                        style={{ padding: '6px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                        🔒 Çıkış Yap
-                    </button>
+        <div className="page">
+            <div className="topbar">
+                <h2>👨‍🍳 Kasa & Mutfak Paneli</h2>
+                <div className="stepper">
+                    <span className="badge badge-success"><span className="dot-live" /> Canlı Takip</span>
+                    <button onClick={handleLogout} className="btn btn-danger btn-sm">🔒 Çıkış</button>
                 </div>
             </div>
 
             {orders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '50px', backgroundColor: '#f8f9fa', borderRadius: '8px', color: '#6c757d' }}>
-                    <h3>Şu an açık masanız yok.</h3>
+                <div className="empty">
+                    <span className="empty-emoji">🍽️</span>
+                    <h3>Şu an açık masanız yok</h3>
                     <p>Müşteriler QR kod ile sipariş verdiğinde adisyonlar buraya canlı düşecektir.</p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-                    {orders.map(order => (
-                        <div key={order.id} style={{ border: '2px solid #e0e0e0', borderRadius: '10px', padding: '15px', backgroundColor: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #f0f0f0', paddingBottom: '10px', marginBottom: '10px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>
-                {order.table?.table_number || `Masa ID: ${order.table_id}`}
-                </span>
-                                <span style={{ fontSize: '12px', color: '#888' }}>
-                  {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                <div className="grid grid-cards">
+                    {orders.map((order, oi) => (
+                        <div key={order.id} className="card reveal" style={{ '--i': oi }}>
+                            <div className="row-between" style={{ paddingBottom: 12, borderBottom: '1px solid var(--glass-border)' }}>
+                                <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-strong)' }}>
+                                    {order.table?.table_number || `Masa ID: ${order.table_id}`}
+                                </span>
+                                <span className="muted" style={{ fontSize: 12 }}>
+                                    {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                             </div>
 
-                            <ul style={{ listStyleType: 'none', padding: 0, margin: '10px 0', minHeight: '100px' }}>
+                            <ul className="prod-list" style={{ margin: '12px 0', minHeight: 90 }}>
                                 {order.items.map(item => (
-                                    <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0', fontSize: '15px' }}>
-                    <span>
-                      <strong>{item.quantity}x</strong> {item.product ? item.product.name : 'Ürün'}
-                    </span>
-                                        <span style={{ color: '#555' }}>
-                      {(item.price_at_sale * item.quantity).toFixed(2)} TL
-                    </span>
+                                    <li key={item.id} className="row-between" style={{ padding: '6px 0', fontSize: 15 }}>
+                                        <span><strong>{item.quantity}x</strong> {item.product ? item.product.name : 'Ürün'}</span>
+                                        <span className="muted">{(item.price_at_sale * item.quantity).toFixed(2)} TL</span>
                                     </li>
                                 ))}
                             </ul>
 
-                            <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: '10px', marginTop: '10px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                    <span style={{ fontWeight: 'bold', fontSize: '16px' }}>Toplam Tutar:</span>
-                                    <span style={{ fontWeight: 'bold', fontSize: '18px', color: '#d9534f' }}>
-                    {calculateOrderTotal(order.items)} TL
-                  </span>
+                            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: 12 }}>
+                                <div className="row-between" style={{ marginBottom: 12 }}>
+                                    <span style={{ fontWeight: 600 }}>Toplam Tutar</span>
+                                    <span className="cart-total">{calculateOrderTotal(order.items)} TL</span>
                                 </div>
-
-                                <button
-                                    onClick={() => handlePayOrder(order.id)}
-                                    style={{ width: '100%', padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}
-                                >
+                                <button onClick={() => handlePayOrder(order.id)} className="btn btn-success btn-block">
                                     💳 Hesabı Kapat / Öde
                                 </button>
                             </div>

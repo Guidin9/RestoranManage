@@ -114,64 +114,52 @@ function App() {
     // 🔴 3. SENARYO: QR Kod Yoksa veya Geçersizse Hata Göster
     if (error) {
         return (
-            <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif', color: 'red' }}>
-                <h2>⚠️ Hata</h2>
-                <p>{error}</p>
+            <div className="login-wrap">
+                <div className="login-card" style={{ textAlign: 'center' }}>
+                    <span className="login-emoji">⚠️</span>
+                    <h2>Bir sorun var</h2>
+                    <p className="muted" style={{ marginTop: 10 }}>{error}</p>
+                </div>
             </div>
         );
     }
 
     // 🟢 4. SENARYO: Normal Müşteri QR Menü Ekranı
     return (
-        <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1>Mert'in QR Menü Sistemi</h1>
-                <span style={{ backgroundColor: '#eee', padding: '5px 10px', borderRadius: '5px', fontWeight: 'bold' }}>
-                    {tableNumber}
-                </span>
+        <div className="page page--narrow">
+            <div className="topbar">
+                <h1 className="title-gradient">Mert'in QR Menü</h1>
+                <span className="badge badge-accent">🍽️ {tableNumber}</span>
             </div>
-            <hr />
 
-            <h2>Menü</h2>
-            {menu.map((category) => (
-                <div key={category.id} style={{ margin: '20px 0', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-                    <h3 style={{ color: 'orange', marginTop: 0 }}>{category.name}</h3>
-                    <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {menu.map((category, ci) => (
+                <div key={category.id} className="card cat-block reveal" style={{ '--i': ci }}>
+                    <h3 className="cat-title">{category.name}</h3>
+                    <ul className="prod-list">
                         {category.products.map((product) => {
                             const qty = getItemQuantity(product.id);
                             return (
-                                <li key={product.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '15px 0', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}>
-
-                                    {/* SOL KISIM: RESİM VE BİLGİ */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <li key={product.id} className="prod-row">
+                                    <div className="prod-left">
                                         {product.image_url ? (
-                                            <img
-                                                src={product.image_url}
-                                                alt={product.name}
-                                                style={{ width: '65px', height: '65px', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
-                                            />
+                                            <img src={product.image_url} alt={product.name} className="prod-thumb" />
                                         ) : (
-                                            <div style={{ width: '65px', height: '65px', backgroundColor: '#f0f0f0', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '24px' }}>
-                                                🍔
-                                            </div>
+                                            <div className="prod-thumb prod-thumb--empty">🍔</div>
                                         )}
                                         <div>
-                                            <strong style={{ fontSize: '16px', display: 'block' }}>{product.name}</strong>
-                                            <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '14px' }}>{product.price} TL</span>
+                                            <span className="prod-name">{product.name}</span>
+                                            <span className="prod-price">{product.price} TL</span>
                                         </div>
                                     </div>
 
-                                    {/* SAĞ KISIM: EKLE / ÇIKAR BUTONLARI */}
-                                    <div>
+                                    <div className="stepper">
                                         {qty > 0 && (
                                             <>
-                                                <button onClick={() => removeFromCart(product.id)} style={{ padding: '5px 10px', cursor: 'pointer' }}>-</button>
-                                                <span style={{ margin: '0 10px', fontWeight: 'bold' }}>{qty}</span>
+                                                <button onClick={() => removeFromCart(product.id)} className="qty-btn">−</button>
+                                                <span className="qty-num">{qty}</span>
                                             </>
                                         )}
-                                        <button onClick={() => addToCart(product)} style={{ padding: '6px 12px', backgroundColor: 'orange', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                            + Ekle
-                                        </button>
+                                        <button onClick={() => addToCart(product)} className="btn btn-primary btn-sm">+ Ekle</button>
                                     </div>
                                 </li>
                             );
@@ -181,20 +169,22 @@ function App() {
             ))}
 
             {cart.length > 0 && (
-                <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#fff3cd', borderRadius: '8px', border: '1px solid #ffeeba' }}>
-                    <h3>Sepetiniz</h3>
-                    <ul>
+                <div className="cart-bar">
+                    <div className="row-between">
+                        <h3 style={{ margin: 0 }}>🛒 Sepetiniz</h3>
+                        <span className="badge badge-accent">{cart.reduce((n, i) => n + i.quantity, 0)} ürün</span>
+                    </div>
+                    <ul className="cart-list">
                         {cart.map(item => (
                             <li key={item.id}>
-                                {item.name} x {item.quantity} = {(item.price * item.quantity).toFixed(2)} TL
+                                <span>{item.name} × {item.quantity}</span>
+                                <span>{(item.price * item.quantity).toFixed(2)} TL</span>
                             </li>
                         ))}
                     </ul>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' }}>
-                        <h4>Toplam Tutar: {calculateTotal()} TL</h4>
-                        <button onClick={submitOrder} style={{ padding: '10px 20px', backgroundColor: 'green', color: 'white', border: 'none', borderRadius: '5px', fontSize: '16px', cursor: 'pointer' }}>
-                            Sepeti Onayla
-                        </button>
+                    <div className="row-between">
+                        <span className="cart-total">Toplam: {calculateTotal()} TL</span>
+                        <button onClick={submitOrder} className="btn btn-success">Sepeti Onayla ✓</button>
                     </div>
                 </div>
             )}

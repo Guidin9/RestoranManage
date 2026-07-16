@@ -117,19 +117,21 @@ function Waiter() {
     // 🔴 EĞER GİRİŞ YAPILMADIYSA: LOGIN EKRANI
     if (!waiterInfo) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', fontFamily: 'sans-serif' }}>
-                <form onSubmit={handleLogin} style={{ backgroundColor: '#fff', border: '1px solid #ddd', padding: '30px', borderRadius: '10px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', width: '350px' }}>
-                    <h2 style={{ textAlign: 'center', color: '#333' }}>🤵 Garson Girişi</h2>
-                    {loginError && <p style={{ color: 'red', textAlign: 'center' }}>{loginError}</p>}
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ fontWeight: 'bold' }}>Kullanıcı Adı:</label>
-                        <input type="text" value={username} onChange={e => setUsername(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px' }} placeholder="ahmet" />
+            <div className="login-wrap">
+                <form onSubmit={handleLogin} className="login-card">
+                    <span className="login-emoji">🤵</span>
+                    <h2>Garson Girişi</h2>
+                    <p className="login-sub">Masa haritasına erişmek için giriş yapın</p>
+                    {loginError && <div className="alert">{loginError}</div>}
+                    <div className="field">
+                        <label className="label">Kullanıcı Adı</label>
+                        <input type="text" className="input" value={username} onChange={e => setUsername(e.target.value)} required placeholder="ahmet" />
                     </div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ fontWeight: 'bold' }}>Şifre:</label>
-                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px' }} placeholder="123456" />
+                    <div className="field">
+                        <label className="label">Şifre</label>
+                        <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••" />
                     </div>
-                    <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>Giriş Yap</button>
+                    <button type="submit" className="btn btn-primary btn-block">Giriş Yap →</button>
                 </form>
             </div>
         );
@@ -137,48 +139,41 @@ function Waiter() {
 
     // 🟢 EĞER GİRİŞ YAPILDIYSA: FULL MASA HARİTASI
     return (
-        <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="page">
 
             {/* ÜST BAR */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '15px' }}>
+            <div className="topbar">
                 <div>
-                    <h2 style={{ margin: 0 }}>🤵 Garson Masaları</h2>
-                    <span style={{ fontSize: '14px', color: '#555' }}>
-            Personel: <strong>{waiterInfo.name}</strong> (#{waiterInfo.id})
-          </span>
+                    <h2>🤵 Garson Masaları</h2>
+                    <span className="muted" style={{ fontSize: 14 }}>
+                        Personel: <strong style={{ color: 'var(--text-strong)' }}>{waiterInfo.name}</strong> (#{waiterInfo.id})
+                    </span>
                 </div>
-                <button onClick={handleLogout} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>🔒 Çıkış</button>
+                <button onClick={handleLogout} className="btn btn-danger btn-sm">🔒 Çıkış</button>
             </div>
 
             {/* TÜM MASALARIN LISTESİ (GRID) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
-                {tables.map(table => (
+            <div className="grid grid-tables">
+                {tables.map((table, ti) => (
                     <div
                         key={table.id}
                         onClick={() => setSelectedTable(table)}
-                        style={{
-                            border: '2px solid',
-                            borderColor: table.is_occupied ? '#dc3545' : '#28a745',
-                            borderRadius: '10px',
-                            padding: '15px',
-                            backgroundColor: table.is_occupied ? '#fff5f5' : '#f8fff8',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
-                        }}
+                        className={`card table-card reveal ${table.is_occupied ? 'table-card--busy' : 'table-card--free'}`}
+                        style={{ '--i': ti }}
                     >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <div className="row-between" style={{ marginBottom: 10 }}>
                             <h3 style={{ margin: 0 }}>{table.table_number}</h3>
-                            <span style={{ backgroundColor: table.is_occupied ? '#dc3545' : '#28a745', color: 'white', padding: '3px 8px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold' }}>
-                {table.is_occupied ? 'DOLU' : 'BOŞ'}
-              </span>
+                            <span className={`badge ${table.is_occupied ? 'badge-danger' : 'badge-success'}`}>
+                                {table.is_occupied ? 'DOLU' : 'BOŞ'}
+                            </span>
                         </div>
 
                         {table.is_occupied ? (
-                            <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
-                                Adisyon: <strong>{table.active_order?.items?.length || 0} Kalem Ürün</strong>
+                            <p className="muted" style={{ fontSize: 13 }}>
+                                Adisyon: <strong style={{ color: 'var(--text-strong)' }}>{table.active_order?.items?.length || 0} Kalem Ürün</strong>
                             </p>
                         ) : (
-                            <p style={{ margin: 0, fontSize: '13px', color: '#28a745' }}>Sipariş almak için tıkla</p>
+                            <p style={{ fontSize: 13, color: '#7ff6cf' }}>Sipariş almak için tıkla</p>
                         )}
                     </div>
                 ))}
@@ -186,59 +181,49 @@ function Waiter() {
 
             {/* MASAYA TIKLANDIĞINDA AÇILAN SİPARİŞ / ADİSYON MODALI */}
             {selectedTable && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '10px', width: '90%', maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto' }}>
+                <div className="modal-overlay" onClick={() => setSelectedTable(null)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
-                            <h3 style={{ margin: 0 }}>{selectedTable.table_number} — Sipariş & Adisyon Yönetimi</h3>
-                            <button onClick={() => setSelectedTable(null)} style={{ border: 'none', background: 'none', fontSize: '22px', cursor: 'pointer' }}>✖</button>
+                        <div className="row-between" style={{ paddingBottom: 12, borderBottom: '1px solid var(--glass-border)' }}>
+                            <h3 style={{ margin: 0 }}>{selectedTable.table_number} — Adisyon</h3>
+                            <button onClick={() => setSelectedTable(null)} className="modal-close">✖</button>
                         </div>
 
                         {/* BÖLÜM 1: MEVCUT ADİSYON & ÜRÜN SİLME */}
-                        <div style={{ marginTop: '15px', backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '8px' }}>
-                            <h4 style={{ marginTop: 0, color: '#333' }}>📋 Masadaki Güncel Adisyon</h4>
+                        <div className="subpanel">
+                            <h4 style={{ marginTop: 0 }}>📋 Masadaki Güncel Adisyon</h4>
 
                             {selectedTable.is_occupied && selectedTable.active_order?.items?.length > 0 ? (
-                                <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+                                <ul className="prod-list">
                                     {selectedTable.active_order.items.map(item => (
-                                        <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', paddingBottom: '5px', borderBottom: '1px solid #ddd' }}>
-                      <span>
-                        <strong>{item.quantity}x</strong> {item.product ? item.product.name : 'Ürün'} — {(item.price_at_sale * item.quantity).toFixed(2)} TL
-                      </span>
-                                            <button
-                                                onClick={() => handleRemoveItem(item.id)}
-                                                style={{ padding: '4px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
-                                            >
-                                                🗑️ 1 Eksilt / Sil
-                                            </button>
+                                        <li key={item.id} className="row-between" style={{ padding: '8px 0', borderBottom: '1px solid var(--glass-border)' }}>
+                                            <span>
+                                                <strong>{item.quantity}x</strong> {item.product ? item.product.name : 'Ürün'} — {(item.price_at_sale * item.quantity).toFixed(2)} TL
+                                            </span>
+                                            <button onClick={() => handleRemoveItem(item.id)} className="btn btn-danger btn-sm">🗑️ Eksilt</button>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p style={{ color: '#888', margin: 0 }}>Bu masada henüz açık bir adisyon yok. Aşağıdan ürün ekleyebilirsiniz.</p>
+                                <p className="muted">Bu masada henüz açık bir adisyon yok. Aşağıdan ürün ekleyebilirsiniz.</p>
                             )}
                         </div>
 
                         {/* BÖLÜM 2: MASAYA MENÜDEN ÜRÜN EKLEME */}
-                        <div style={{ marginTop: '20px' }}>
-                            <h4 style={{ marginBottom: '10px', color: '#17a2b8' }}>➕ Masaya Ürün Ekle (Menü)</h4>
+                        <div style={{ marginTop: 20 }}>
+                            <h4 style={{ marginBottom: 12, color: 'var(--info)' }}>➕ Masaya Ürün Ekle</h4>
 
                             {menu.map(category => (
-                                <div key={category.id} style={{ marginBottom: '15px', border: '1px solid #eee', padding: '10px', borderRadius: '6px' }}>
-                                    <h5 style={{ margin: '0 0 8px 0', color: 'orange' }}>{category.name}</h5>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+                                <div key={category.id} className="subpanel" style={{ marginTop: 12 }}>
+                                    <h5 className="cat-title" style={{ marginTop: 0, fontSize: 15 }}>{category.name}</h5>
+                                    <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
                                         {category.products.map(product => (
-                                            <div key={product.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', border: '1px solid #ddd', padding: '8px', borderRadius: '4px', fontSize: '13px' }}>
+                                            <div key={product.id} className="row-between" style={{ padding: 10, borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', fontSize: 13 }}>
                                                 <div>
                                                     <div><strong>{product.name}</strong></div>
-                                                    <small style={{ color: '#666' }}>{product.price} TL</small>
+                                                    <small className="prod-price">{product.price} TL</small>
                                                 </div>
-                                                <button
-                                                    onClick={() => handleAddProduct(selectedTable.id, product.id)}
-                                                    style={{ padding: '5px 10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold' }}
-                                                >
-                                                    + Ekle
-                                                </button>
+                                                <button onClick={() => handleAddProduct(selectedTable.id, product.id)} className="btn btn-success btn-sm">+ Ekle</button>
                                             </div>
                                         ))}
                                     </div>
@@ -246,13 +231,8 @@ function Waiter() {
                             ))}
                         </div>
 
-                        <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-                            <button
-                                onClick={() => setSelectedTable(null)}
-                                style={{ width: '100%', padding: '10px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-                            >
-                                Pencereyi Kapat
-                            </button>
+                        <div style={{ marginTop: 20 }}>
+                            <button onClick={() => setSelectedTable(null)} className="btn btn-block">Pencereyi Kapat</button>
                         </div>
 
                     </div>
