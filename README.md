@@ -76,7 +76,16 @@ docker compose exec backend php artisan migrate --force
 docker compose exec backend php artisan db:seed --class=StaffSeeder
 ```
 
-`APP_KEY` üretmek için: `docker compose run --rm backend php artisan key:generate --show`
+`APP_KEY` üretmek için (sunucuda, `.env`'i doldurmadan önce):
+
+```bash
+echo "base64:$(openssl rand -base64 32)"
+```
+
+`artisan key:generate` ile üretmeye çalışmayın: Compose, backend servisini başlatmadan
+**önce** `APP_KEY` zorunluluğunu kontrol eder, dolayısıyla anahtar henüz yokken
+`docker compose run backend ...` komutu çalışmaz. Yukarıdaki `openssl` çıktısı
+Laravel'in ürettiğiyle birebir aynı biçimdedir (`base64:` + 32 rastgele bayt).
 
 Zorunlu değişkenler tanımsızsa Compose sessizce başlamak yerine anlaşılır bir hata verir.
 Sertifikanın alındığını görmek için: `docker compose logs caddy`.
