@@ -6,6 +6,26 @@ sipariş verir; garson, kasa ve yönetici kendi panellerinden süreci yönetir.
 - **Backend:** Laravel 13 (API-only), PHP 8.4, MySQL, Sanctum token auth
 - **Frontend:** React 19 + Vite (tek sayfa uygulama)
 
+## Proje Durumu
+
+**Canlı:** https://restoranmanage.francecentral.cloudapp.azure.com — Azure Linux VM'de
+Docker ile yayında, HTTPS çalışıyor (Caddy + Let's Encrypt). Son güncelleme: 2026-07-16.
+
+**Tamamlandı**
+- Backend + frontend kodu, dört ekran (müşteri / garson / kasa / yönetici) çalışır durumda.
+- Docker ile canlıya alındı: 4 konteyner (caddy, frontend, backend, db), yalnızca 80/443 dışa açık.
+- HTTPS uçtan uca doğrulandı (admin girişi HTTPS üzerinden token döndürdü).
+- Veritabanı migrate edildi, `StaffSeeder` ile admin + kasa hesapları oluşturuldu.
+- Git geçmişi temizlendi; `main` (canlı) ve `dev` (UI geliştirme) branch'leri hazır.
+
+**Yarım / bekleyen**
+- Menü içeriği boş: masa, kategori ve ürünler `/admin` panelinden elle eklenecek.
+- QR kodları henüz basılmadı (adres kalıcı, hazır olunca admin panelinden basılabilir).
+- UI/tasarım geliştirmesi başlamadı — bkz. `qr-menu-frontend/TASARIM.md`.
+
+**Sıradaki adım:** `dev` branch'inde UI tasarımına başlamak (önce müşteri menüsü),
+paralelde `/admin`'den gerçek menüyü doldurmak. Deploy akışı `TASARIM.md`'de.
+
 ## Ekranlar
 
 | Adres | Kim kullanır | Ne yapar |
