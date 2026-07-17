@@ -481,6 +481,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .status-tag--ok { background: rgba(111, 138, 82, 0.15); color: var(--olive-deep); }
 .status-tag--wait { background: rgba(211, 162, 86, 0.18); color: #9a6a1e; }
+.status-tag--ready { background: rgba(18, 104, 138, 0.13); color: var(--sea-deep); }
 
 .cat-title { font: 700 13px/1 var(--sans); color: var(--ink); margin: 18px 4px 12px; }
 
@@ -715,6 +716,21 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   transition: background 0.2s ease;
 }
 .order-deliver:hover { background: var(--olive-deep); }
+
+/* Mutfak fişinde "Tümünü Hazırla" butonu */
+.order-prepare {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--sea);
+  color: #fff;
+  border: none;
+  padding: 12px;
+  font: 700 13px/1 var(--sans);
+  cursor: pointer;
+  border-radius: 0 0 18px 18px;
+  transition: background 0.2s ease;
+}
+.order-prepare:hover { background: var(--sea-deep); }
 
 /* =========================================================================
    Modal

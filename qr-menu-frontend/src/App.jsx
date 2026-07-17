@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Cashier from './Cashier';
 import Waiter from './Waiter';
 import Admin from './Admin';
+import Kitchen from './Kitchen';
 import { apiFetch } from './api';
 import { IconPlus, IconMinus, IconCheck, IconBag } from './icons';
 
@@ -9,6 +10,7 @@ function App() {
     // DİREKT LINK KONTROLLERİ
     const isCashierRoute = window.location.pathname === '/cashier';
     const isWaiterRoute = window.location.pathname === '/waiter';
+    const isKitchenRoute = window.location.pathname === '/kitchen';
 
     const [menu, setMenu] = useState([]);
     const [cart, setCart] = useState([]);
@@ -27,8 +29,8 @@ function App() {
     const tableUuid = urlParams.get('table');
 
     useEffect(() => {
-        // Kasa VEYA Garson adresi açıldıysa müşteri QR kontrolü çalıştırma
-        if (isCashierRoute || isWaiterRoute) return;
+        // Kasa / Garson / Mutfak adresi açıldıysa müşteri QR kontrolü çalıştırma
+        if (isCashierRoute || isWaiterRoute || isKitchenRoute) return;
 
         if (!tableUuid) {
             setError("Lütfen masadaki QR kodu tekrar okutunuz. (Masa parametresi bulunamadı)");
@@ -57,7 +59,7 @@ function App() {
         // Masa hesabı canlı kalsın: diğer kişiler/garson sipariş ekledikçe toplam güncellensin.
         const interval = setInterval(fetchMenu, 5000);
         return () => clearInterval(interval);
-    }, [tableUuid, isCashierRoute, isWaiterRoute]);
+    }, [tableUuid, isCashierRoute, isWaiterRoute, isKitchenRoute]);
 
     const addToCart = (product) => {
         setCart(prevCart => {
@@ -120,6 +122,9 @@ function App() {
     if (isWaiterRoute) {
         return <Waiter />;
     }
+    if (isKitchenRoute) {
+        return <Kitchen />;
+    }
     if (isAdminRoute) {
         return <Admin />;
     }
@@ -168,9 +173,13 @@ function App() {
                                 <li key={i} className="tab-item">
                                     <span className="tab-item-qty">{it.quantity}×</span>
                                     <span className="tab-item-name">{it.name}</span>
-                                    <span className={`status-tag ${it.is_delivered ? 'status-tag--ok' : 'status-tag--wait'}`}>
-                                        {it.is_delivered ? 'Servis edildi' : 'Hazırlanıyor'}
-                                    </span>
+                                    {it.stage === 'served' ? (
+                                        <span className="status-tag status-tag--ok">Servis edildi</span>
+                                    ) : it.stage === 'ready' ? (
+                                        <span className="status-tag status-tag--ready">Servise hazır</span>
+                                    ) : (
+                                        <span className="status-tag status-tag--wait">Hazırlanıyor</span>
+                                    )}
                                     <span className="tab-item-price">{it.line_total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
                                 </li>
                             ))}

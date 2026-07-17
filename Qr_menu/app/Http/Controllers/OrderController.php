@@ -146,9 +146,12 @@ class OrderController extends Controller
 
         if ($item->quantity > 1) {
             $item->quantity -= 1;
-            // Teslim edilmiş miktar kalan adedi aşamaz.
-            if ($item->delivered_quantity > $item->quantity) {
-                $item->delivered_quantity = $item->quantity;
+            // Değişmez kural: delivered ≤ prepared ≤ quantity — taşanları kırp.
+            if ($item->prepared_quantity > $item->quantity) {
+                $item->prepared_quantity = $item->quantity;
+            }
+            if ($item->delivered_quantity > $item->prepared_quantity) {
+                $item->delivered_quantity = $item->prepared_quantity;
             }
             $item->save();
         } else {
@@ -168,9 +171,53 @@ class OrderController extends Controller
         return response()->json(['success' => true, 'message' => 'Ürün adisyondan düşüldü.']);
     }
 
-    // Garson & Kasa İçin: Masa/hesap düzeyi teslim — siparişin tüm kalemlerini
-    // teslim edilmiş işaretle (delivered_quantity = quantity). Bekleyen uyarısı kalkar.
-    public function deliverOrder($id): JsonResponse
+    // Mutfak Ekranı İçin: Hazırlanacak kalemi olan (preparing > 0) aktif masaları,
+    // FİYATSIZ olarak döndürür — hangi masada ne var, hangi aşamada.
+    public function kitchenOrders(): JsonResponse
+    {
+        $orders = Order::with('items.product')
+            ->where('status', 'active')
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->filter(fn ($order) => $order->items->contains(fn ($i) => $i->preparing_quantity > 0))
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'table_number' => $order->table->table_number ?? ('Masa ' . $order->table_id),
+                    'opened_at' => optional($order->created_at)->toIso8601String(),
+                    'items' => $order->items->map(fn ($i) => [
+                        'id' => $i->id,
+                        'name' => $i->product ? $i->product->name : 'Ürün',
+                        'quantity' => (int) $i->quantity,
+                        'prepared_quantity' => (int) $i->prepared_quantity,
+                        'preparing_quantity' => $i->preparing_quantity,
+                        'ready_quantity' => $i->ready_quantity,
+                        'stage' => $i->stage,
+                    ])->values(),
+                ];
+            })
+            ->values();
+
+        return response()->json(['success' => true, 'data' => $orders], 200);
+    }
+
+    // Mutfak: tek kalemi hazır işaretle (prepared_quantity = quantity → servise hazır).
+    public function prepareItem($itemId): JsonResponse
+    {
+        $item = \App\Models\OrderItem::find($itemId);
+
+        if (! $item) {
+            return response()->json(['success' => false, 'message' => 'Kalem bulunamadı.'], 404);
+        }
+
+        $item->prepared_quantity = $item->quantity;
+        $item->save();
+
+        return response()->json(['success' => true, 'message' => 'Ürün hazır olarak işaretlendi.']);
+    }
+
+    // Mutfak: siparişin tüm kalemlerini hazır işaretle ("Tümünü Hazırla").
+    public function prepareOrder($id): JsonResponse
     {
         $order = Order::with('items')->find($id);
 
@@ -179,13 +226,48 @@ class OrderController extends Controller
         }
 
         foreach ($order->items as $item) {
-            if ($item->delivered_quantity !== (int) $item->quantity) {
-                $item->delivered_quantity = $item->quantity;
+            if ($item->prepared_quantity !== (int) $item->quantity) {
+                $item->prepared_quantity = $item->quantity;
                 $item->save();
             }
         }
 
-        return response()->json(['success' => true, 'message' => 'Sipariş teslim edildi olarak işaretlendi.']);
+        return response()->json(['success' => true, 'message' => 'Siparişin tüm ürünleri hazırlandı.']);
+    }
+
+    // Garson/Kasa: tek kalemi servis edildi işaretle (delivered = prepared).
+    // Yalnız hazırlanmış adet servis edilebilir.
+    public function serveItem($itemId): JsonResponse
+    {
+        $item = \App\Models\OrderItem::find($itemId);
+
+        if (! $item) {
+            return response()->json(['success' => false, 'message' => 'Kalem bulunamadı.'], 404);
+        }
+
+        $item->delivered_quantity = $item->prepared_quantity;
+        $item->save();
+
+        return response()->json(['success' => true, 'message' => 'Ürün servis edildi olarak işaretlendi.']);
+    }
+
+    // Garson/Kasa: siparişin servise hazır tüm kalemlerini servis et ("Tümünü Servis Et").
+    public function serveOrder($id): JsonResponse
+    {
+        $order = Order::with('items')->find($id);
+
+        if (! $order) {
+            return response()->json(['success' => false, 'message' => 'Sipariş bulunamadı.'], 404);
+        }
+
+        foreach ($order->items as $item) {
+            if ($item->delivered_quantity !== (int) $item->prepared_quantity) {
+                $item->delivered_quantity = $item->prepared_quantity;
+                $item->save();
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Sipariş servis edildi olarak işaretlendi.']);
     }
 
     // Kasa Ekranı İçin: Seçilen günün gün özeti + haftalık/aylık bağlam + grafik verisi.

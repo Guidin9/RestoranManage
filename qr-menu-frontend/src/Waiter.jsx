@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
-import { IconPlus, IconMinus, IconX, IconUser, IconLogout, IconLogin, IconCalendar, IconCheck, IconBag, IconBell, IconTruck } from './icons';
+import { IconPlus, IconMinus, IconX, IconUser, IconLogout, IconLogin, IconCalendar, IconCheck, IconBag, IconBell } from './icons';
 
 function Waiter() {
     // Token yoksa kayıtlı garson bilgisi de anlamsız; ikisini birlikte değerlendiriyoruz.
@@ -150,25 +150,35 @@ function Waiter() {
             });
     };
 
-    // 5. MANTIK: Masayı teslim edildi işaretle (tüm bekleyen kalemler)
-    const handleDeliver = (orderId) => {
-        apiFetch(`/api/waiter/orders/${orderId}/deliver`, { role: 'waiter', method: 'POST' })
+    // 5. MANTIK: Servis işaretleme — mutfağın hazırladığı (ready) kalemleri servis et
+    const handleServeItem = (itemId) => {
+        apiFetch(`/api/waiter/items/${itemId}/serve`, { role: 'waiter', method: 'POST' })
             .then(res => {
                 if (res.success) fetchAllData();
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Teslim işaretlenemedi, sunucuya ulaşılamıyor.");
+                if (!handleAuthError(err)) alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
             });
     };
 
-    // Teslim bekleyen (yeni) sipariş var mı? — masa kartı / banner / modal için
-    const tableHasPending = (t) => (t.active_order?.items || []).some(i => (i.pending_quantity || 0) > 0);
-    const pendingTableCount = tables.filter(tableHasPending).length;
+    const handleServeAll = (orderId) => {
+        apiFetch(`/api/waiter/orders/${orderId}/serve`, { role: 'waiter', method: 'POST' })
+            .then(res => {
+                if (res.success) fetchAllData();
+            })
+            .catch(err => {
+                if (!handleAuthError(err)) alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
+            });
+    };
+
+    // Servis bekleyen (mutfak hazırladı) kalem var mı? — kart / banner / modal için
+    const tableHasReady = (t) => (t.active_order?.items || []).some(i => (i.ready_quantity || 0) > 0);
+    const readyTableCount = tables.filter(tableHasReady).length;
 
     // Adisyon toplamı (yalnızca görünüm için)
     const orderItems = selectedTable?.active_order?.items || [];
     const orderTotal = orderItems.reduce((sum, item) => sum + item.price_at_sale * item.quantity, 0).toFixed(2);
-    const selectedPendingCount = orderItems.reduce((n, i) => n + (i.pending_quantity || 0), 0);
+    const selectedReadyCount = orderItems.reduce((n, i) => n + (i.ready_quantity || 0), 0);
 
     // Bekleyen sepet (henüz gönderilmemiş) toplamları
     const pendingLines = Object.values(pendingCart);
@@ -224,20 +234,20 @@ function Waiter() {
 
                 {/* TÜM MASALARIN LISTESİ (GRID) */}
                 <div className="panel-body">
-                    {pendingTableCount > 0 && (
+                    {readyTableCount > 0 && (
                         <div className="alert-banner">
                             <IconBell size={17} />
-                            <span><b>{pendingTableCount} masada</b> teslim bekleyen sipariş var</span>
+                            <span><b>{readyTableCount} masada</b> servis bekleyen sipariş var</span>
                         </div>
                     )}
                     <div className="grid grid-tables">
                         {tables.map((table, ti) => {
-                            const pending = tableHasPending(table);
+                            const ready = tableHasReady(table);
                             return (
                                 <button
                                     key={table.id}
                                     onClick={() => setSelectedTable(table)}
-                                    className={`table-card reveal ${table.is_occupied ? 'table-card--busy' : 'table-card--free'} ${pending ? 'table-card--pending' : ''}`}
+                                    className={`table-card reveal ${table.is_occupied ? 'table-card--busy' : 'table-card--free'} ${ready ? 'table-card--pending' : ''}`}
                                     style={{ '--i': ti }}
                                 >
                                     <div className="row-between">
@@ -247,8 +257,8 @@ function Waiter() {
                                         </span>
                                     </div>
                                     <div className="table-meta">
-                                        {pending ? (
-                                            <span className="badge-pending"><span className="dot-pending" />Teslim bekliyor</span>
+                                        {ready ? (
+                                            <span className="badge-pending"><span className="dot-pending" />Servis bekliyor</span>
                                         ) : table.is_occupied
                                             ? `${table.active_order?.items?.length || 0} kalem ürün`
                                             : 'sipariş almak için dokunun'}
@@ -278,20 +288,28 @@ function Waiter() {
                             {selectedTable.is_occupied && orderItems.length > 0 ? (
                                 <div className="stack" style={{ gap: 8, marginBottom: 22 }}>
                                     {orderItems.map(item => (
-                                        <div key={item.id} className={`line-row ${item.pending_quantity > 0 ? 'line-row--pending' : ''}`}>
+                                        <div key={item.id} className={`line-row ${item.ready_quantity > 0 ? 'line-row--pending' : ''}`}>
                                             <span className="line-qty">{item.quantity}×</span>
                                             <span className="line-name">{item.product ? item.product.name : 'Ürün'}</span>
-                                            {item.pending_quantity > 0 && (
-                                                <span className="status-tag status-tag--wait">{item.pending_quantity} bekliyor</span>
+                                            {item.stage === 'served' ? (
+                                                <span className="status-tag status-tag--ok">Servis edildi</span>
+                                            ) : item.stage === 'ready' ? (
+                                                <span className="status-tag status-tag--ready">Servise hazır</span>
+                                            ) : (
+                                                <span className="status-tag status-tag--wait">Hazırlanıyor</span>
                                             )}
                                             <span className="line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
-                                            <button onClick={() => handleRemoveItem(item.id)} className="btn btn-danger btn-sm"><IconMinus size={13} />Eksilt</button>
+                                            {item.ready_quantity > 0 ? (
+                                                <button onClick={() => handleServeItem(item.id)} className="btn btn-success btn-sm"><IconCheck size={13} />Servis Et</button>
+                                            ) : (
+                                                <button onClick={() => handleRemoveItem(item.id)} className="btn btn-danger btn-sm"><IconMinus size={13} />Eksilt</button>
+                                            )}
                                         </div>
                                     ))}
                                     <div className="total-row"><span>Toplam</span><span>{orderTotal} ₺</span></div>
-                                    {selectedPendingCount > 0 && (
-                                        <button onClick={() => handleDeliver(selectedTable.active_order.id)} className="btn btn-success btn-block" style={{ marginTop: 4 }}>
-                                            <IconTruck size={16} />Teslim Edildi ({selectedPendingCount} ürün)
+                                    {selectedReadyCount > 0 && (
+                                        <button onClick={() => handleServeAll(selectedTable.active_order.id)} className="btn btn-success btn-block" style={{ marginTop: 4 }}>
+                                            <IconCheck size={16} />Tümünü Servis Et ({selectedReadyCount} ürün)
                                         </button>
                                     )}
                                 </div>

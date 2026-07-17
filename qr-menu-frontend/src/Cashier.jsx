@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
-import { IconCard, IconLogout, IconLogin, IconCloche, IconBell, IconTruck } from './icons';
+import { IconCard, IconLogout, IconLogin, IconCloche, IconBell, IconCheck } from './icons';
 import CashierSummary from './CashierSummary';
 
 function Cashier() {
@@ -103,19 +103,30 @@ function Cashier() {
         return items.reduce((total, item) => total + (item.price_at_sale * item.quantity), 0).toFixed(2);
     };
 
-    // Teslim bekleyen (yeni) kalem sayısı — kart vurgusu / banner / buton için
-    const orderPendingCount = (items) => items.reduce((n, i) => n + (i.pending_quantity || 0), 0);
-    const pendingOrderCount = orders.filter(o => orderPendingCount(o.items) > 0).length;
+    // Servis bekleyen (mutfak hazırladı) kalem sayısı — kart vurgusu / banner / buton için
+    const orderReadyCount = (items) => items.reduce((n, i) => n + (i.ready_quantity || 0), 0);
+    const readyOrderCount = orders.filter(o => orderReadyCount(o.items) > 0).length;
 
-    // Hesabı teslim edildi işaretle (tüm bekleyen kalemler)
-    const handleDeliverOrder = (orderId) => {
-        apiFetch(`/api/cashier/orders/${orderId}/deliver`, { role: 'cashier', method: 'POST' })
+    // Servis işaretleme — mutfağın hazırladığı (ready) kalemleri servis et
+    const handleServeItem = (itemId) => {
+        apiFetch(`/api/cashier/items/${itemId}/serve`, { role: 'cashier', method: 'POST' })
             .then(res => {
                 if (res.success) fetchActiveOrders();
             })
             .catch(err => {
                 if (err instanceof UnauthorizedError) { setIsAuthenticated(false); return; }
-                alert("Teslim işaretlenemedi, sunucuya ulaşılamıyor.");
+                alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
+            });
+    };
+
+    const handleServeAll = (orderId) => {
+        apiFetch(`/api/cashier/orders/${orderId}/serve`, { role: 'cashier', method: 'POST' })
+            .then(res => {
+                if (res.success) fetchActiveOrders();
+            })
+            .catch(err => {
+                if (err instanceof UnauthorizedError) { setIsAuthenticated(false); return; }
+                alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
             });
     };
 
@@ -196,23 +207,23 @@ function Cashier() {
                         </div>
                     ) : (
                         <>
-                            {pendingOrderCount > 0 && (
+                            {readyOrderCount > 0 && (
                                 <div className="alert-banner">
                                     <IconBell size={17} />
-                                    <span><b>{pendingOrderCount} masada</b> teslim bekleyen sipariş var</span>
+                                    <span><b>{readyOrderCount} masada</b> servis bekleyen sipariş var</span>
                                 </div>
                             )}
                             <div className="grid grid-cards">
                                 {orders.map((order, oi) => {
-                                    const pending = orderPendingCount(order.items);
+                                    const ready = orderReadyCount(order.items);
                                     return (
-                                        <div key={order.id} className={`order-card reveal ${pending > 0 ? 'order-card--pending' : ''}`} style={{ '--i': oi }}>
+                                        <div key={order.id} className={`order-card reveal ${ready > 0 ? 'order-card--pending' : ''}`} style={{ '--i': oi }}>
                                             <div className="order-head">
                                                 <span className="order-table">
                                                     {order.table?.table_number || `Masa ID: ${order.table_id}`}
                                                 </span>
-                                                {pending > 0 ? (
-                                                    <span className="badge-pending"><span className="dot-pending" />Teslim bekliyor</span>
+                                                {ready > 0 ? (
+                                                    <span className="badge-pending"><span className="dot-pending" />Servis bekliyor</span>
                                                 ) : (
                                                     <span className="order-time">
                                                         açılış {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -225,9 +236,11 @@ function Cashier() {
                                                     <li key={item.id} className="order-line">
                                                         <span className="line-qty">{item.quantity}×</span>
                                                         <span className="order-line-name">{item.product ? item.product.name : 'Ürün'}</span>
-                                                        {item.pending_quantity > 0 && (
-                                                            <span className="status-tag status-tag--wait">{item.pending_quantity} bekliyor</span>
-                                                        )}
+                                                        {item.stage === 'preparing' ? (
+                                                            <span className="status-tag status-tag--wait">Hazırlanıyor</span>
+                                                        ) : item.stage === 'ready' ? (
+                                                            <button onClick={() => handleServeItem(item.id)} className="btn btn-success btn-sm"><IconCheck size={12} />Servis Et</button>
+                                                        ) : null}
                                                         <span className="order-line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
                                                     </li>
                                                 ))}
@@ -237,9 +250,9 @@ function Cashier() {
                                                 <span className="order-total-label">Toplam</span>
                                                 <span className="order-total-value">{calculateOrderTotal(order.items)} ₺</span>
                                             </div>
-                                            {pending > 0 && (
-                                                <button onClick={() => handleDeliverOrder(order.id)} className="order-deliver">
-                                                    <IconTruck size={16} />Teslim Edildi ({pending} ürün)
+                                            {ready > 0 && (
+                                                <button onClick={() => handleServeAll(order.id)} className="order-deliver">
+                                                    <IconCheck size={16} />Tümünü Servis Et ({ready} ürün)
                                                 </button>
                                             )}
                                             <button onClick={() => setClosingOrder(order)} className="order-pay">

@@ -78,6 +78,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD gerekli - .env dosyasina ekleyin}
       CASHIER_USERNAME: ${CASHIER_USERNAME:-kasa}
       CASHIER_PASSWORD: ${CASHIER_PASSWORD:?CASHIER_PASSWORD gerekli - .env dosyasina ekleyin}
+      KITCHEN_USERNAME: ${KITCHEN_USERNAME:-mutfak}
+      KITCHEN_PASSWORD: ${KITCHEN_PASSWORD:?KITCHEN_PASSWORD gerekli - .env dosyasina ekleyin}
 
   # React Frontend Konteyneri
   frontend:

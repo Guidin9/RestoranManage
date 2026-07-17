@@ -29,4 +29,11 @@ return [
         'password' => env('CASHIER_PASSWORD', '123456'),
     ],
 
+    'kitchen' => [
+        'name' => env('KITCHEN_NAME', 'Mutfak'),
+        'username' => env('KITCHEN_USERNAME', 'mutfak'),
+        'email' => env('KITCHEN_EMAIL', 'mutfak@qrmenu.local'),
+        'password' => env('KITCHEN_PASSWORD', '123456'),
+    ],
+
 ];

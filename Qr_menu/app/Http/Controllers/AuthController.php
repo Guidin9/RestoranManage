@@ -17,6 +17,7 @@ class AuthController extends Controller
     private const ROLE_ABILITIES = [
         'admin' => ['admin', 'cashier', 'waiter'],
         'cashier' => ['cashier'],
+        'kitchen' => ['kitchen'],
     ];
 
     public function adminLogin(Request $request): JsonResponse
@@ -27,6 +28,11 @@ class AuthController extends Controller
     public function cashierLogin(Request $request): JsonResponse
     {
         return $this->loginAsUser($request, 'cashier');
+    }
+
+    public function kitchenLogin(Request $request): JsonResponse
+    {
+        return $this->loginAsUser($request, 'kitchen');
     }
 
     public function waiterLogin(Request $request): JsonResponse

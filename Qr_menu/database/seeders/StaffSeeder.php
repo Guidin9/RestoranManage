@@ -15,6 +15,7 @@ class StaffSeeder extends Seeder
     {
         $this->upsertStaff('admin', config('staff.admin'));
         $this->upsertStaff('cashier', config('staff.cashier'));
+        $this->upsertStaff('kitchen', config('staff.kitchen'));
     }
 
     private function upsertStaff(string $role, array $staff): void

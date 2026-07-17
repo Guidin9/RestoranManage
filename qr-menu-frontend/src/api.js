@@ -8,6 +8,7 @@ const TOKEN_KEYS = {
     admin: 'admin_token',
     cashier: 'cashier_token',
     waiter: 'waiter_token',
+    kitchen: 'kitchen_token',
 };
 
 export function getToken(role) {

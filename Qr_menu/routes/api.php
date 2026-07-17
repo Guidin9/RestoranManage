@@ -35,6 +35,7 @@ Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/admin/login', [AuthController::class, 'adminLogin']);
 Route::post('/cashier/login', [AuthController::class, 'cashierLogin']);
 Route::post('/waiter/login', [AuthController::class, 'waiterLogin']);
+Route::post('/kitchen/login', [AuthController::class, 'kitchenLogin']);
 
 /*
 | Korumalı Uçlar
@@ -46,8 +47,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('abilities:cashier')->group(function () {
         Route::get('/cashier/orders', [OrderController::class, 'activeOrders']);
         Route::post('/cashier/orders/{id}/pay', [OrderController::class, 'closeOrder']);
-        Route::post('/cashier/orders/{id}/deliver', [OrderController::class, 'deliverOrder']);
+        Route::post('/cashier/items/{id}/serve', [OrderController::class, 'serveItem']);
+        Route::post('/cashier/orders/{id}/serve', [OrderController::class, 'serveOrder']);
         Route::get('/cashier/summary', [OrderController::class, 'dailySummary']);
+    });
+
+    // 🍳 Mutfak
+    Route::middleware('abilities:kitchen')->group(function () {
+        Route::get('/kitchen/orders', [OrderController::class, 'kitchenOrders']);
+        Route::post('/kitchen/items/{id}/prepare', [OrderController::class, 'prepareItem']);
+        Route::post('/kitchen/orders/{id}/prepare', [OrderController::class, 'prepareOrder']);
     });
 
     // 🤵 Garson (admin token'ı da bu yetkiye sahip)
@@ -55,7 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/waiter/tables', [OrderController::class, 'waiterTables']);
         Route::get('/waiter/menu', [OrderController::class, 'waiterMenu']);
         Route::post('/waiter/items/{id}/remove', [OrderController::class, 'removeOrderItem']);
-        Route::post('/waiter/orders/{id}/deliver', [OrderController::class, 'deliverOrder']);
+        Route::post('/waiter/items/{id}/serve', [OrderController::class, 'serveItem']);
+        Route::post('/waiter/orders/{id}/serve', [OrderController::class, 'serveOrder']);
     });
 
     // 👑 Admin

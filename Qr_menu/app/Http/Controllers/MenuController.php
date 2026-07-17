@@ -44,7 +44,10 @@ class MenuController extends Controller
                     'quantity' => (int) $item->quantity,
                     'price_at_sale' => (float) $item->price_at_sale,
                     'line_total' => round($lineTotal, 2),
+                    'preparing_quantity' => $item->preparing_quantity,
+                    'ready_quantity' => $item->ready_quantity,
                     'pending_quantity' => $item->pending_quantity,
+                    'stage' => $item->stage,
                     'is_delivered' => $item->is_delivered,
                 ];
             }

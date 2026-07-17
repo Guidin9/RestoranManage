@@ -37,14 +37,18 @@ git push origin main
 ```bash
 cd ~/RestoranManage
 git pull
-sudo docker-compose up -d --build frontend
+sudo docker compose up -d --build frontend
 ```
 
 - **`--build` ZORUNLU.** Vite kodu derleme anında paketler; sadece `restart` hiçbir
   şeyi değiştirmez.
 - `--build frontend` yalnızca frontend konteynerini yeniler (30-60 sn). Backend ve DB'ye
   dokunulmaz, canlı sipariş akışı kesilmez.
-- `docker-compose` V1 (tireli) ve **sudo** ister (`Gui` docker grubunda değil).
+- Sunucuda **Compose V2** kullanılır: `docker compose` (boşluklu). Eski `docker-compose`
+  (tireli) V1 BuildKit imajlarında bozuktur — kullanma. `docker` **sudo** ister (`Gui`
+  docker grubunda değil).
+- Backend de değiştiyse UI ile birlikte: `sudo docker compose up -d --build backend frontend`
+  ve ardından `sudo docker compose exec -T backend php artisan migrate --force`.
 
 ---
 
