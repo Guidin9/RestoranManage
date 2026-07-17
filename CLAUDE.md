@@ -197,11 +197,41 @@ colors or surfaces. Icons are inline SVG from `src/icons.jsx` (no emoji in the p
   (zeytin), `--terra` (terakota, silme/uyarı), `--warn` (amber, teslim uyarısı)
 - Surfaces: `--paper`, `--paper-soft`, `--sand`, `--mist`, `--line`, `--line-strong`,
   `--deep-grad` (the dark petrol panel-header gradient)
-- `--radius*`, easing `--ease-spring` / `--ease-out`
-- Legacy aliases (`--accent`, `--success`, `--danger`, `--info`, `--text-strong`, `--glass-border`)
-  map onto the new tokens so older class references keep working. Use the tokens; don't hardcode hex.
-  (Exception: `CashierSummary.jsx`'s SVG charts use hex constants because SVG presentation attributes
-  don't resolve `var()`.)
+- `--radius-lg` / `--radius-md` / `--radius-sm`, easing `--ease-spring` / `--ease-out`
+- Don't hardcode hex — use the tokens. (Exception: `CashierSummary.jsx`'s SVG charts use hex
+  constants because SVG presentation attributes don't resolve `var()`.)
+
+### Tailwind v4 — hybrid, not a replacement
+
+Tailwind is wired up via `@tailwindcss/vite` (**not** PostCSS — there is no `postcss.config.*`
+and no other PostCSS plugin; `postcss`/`autoprefixer` were removed and Lightning CSS handles
+prefixing). `index.css` starts with `@import 'tailwindcss'`. The rules that matter:
+
+- **Split rule.** A *named design object* used in 2+ places (`.btn`, `.panel`, `.prod-card`)
+  stays as CSS in `@layer components`. *One-off layout/spacing* is a utility in JSX
+  (`mt-5`, `flex-1`, `text-center`). Don't expand `.btn` into utilities at 6 call sites —
+  that's how variant drift starts.
+- **Every rule in `index.css` must live inside a `@layer`.** Unlayered CSS beats *all* layered
+  CSS including `utilities`, so a rule left outside silently kills `className="prod-card mb-3"`.
+  `@layer base` holds element/global rules (`html`, `body`, headings, `::-webkit-scrollbar`,
+  `prefers-reduced-motion`); everything else is `@layer components`. Preflight covers
+  `box-sizing`, so don't re-add it.
+- **`:root` is the single source of truth and is deliberately unlayered** — that's what makes it
+  beat Tailwind's own `@layer theme` defaults (`rounded-md` → 16px, `ease-out` → our curve).
+- **`@theme inline` bridges tokens to Tailwind's namespace** (`--color-sea: var(--sea)`), so
+  `bg-sea` resolves straight to `var(--sea)` and **no separate `--color-sea` is ever emitted**.
+  Change a value only in `:root`. Adding a color = a `:root` token + one bridge line.
+- **The palette is locked**: `@theme { --color-*: initial }` strips Tailwind's 22 built-in
+  ramps, so `bg-blue-500` **won't compile**. Only `white`/`black` were kept.
+- **`@keyframes` are outside layers** (keyframes aren't scoped by them). Our pulse is named
+  **`ml-pulse`** because Tailwind reserves `pulse` via `--animate-pulse` with a different curve.
+- **`.reveal` + `style={{'--i': index}}` stays as-is** — `calc(var(--i,0) * 55ms)` is the one
+  legitimate remaining inline `style`.
+- **Fonts load via `<link>` in `index.html`.** Don't move them back into `index.css`:
+  `@import 'tailwindcss'` expands inline, which would push a font `@import` behind real rules
+  and CSS spec drops it silently (fonts fall back to system).
+- Tailwind v4 requires **iOS 16.4+ / Chrome 111+** (`@property`, `color-mix`, cascade layers).
+  Accepted knowingly; relevant because random customer phones scan the QR menu.
 
 **Core classes** (all in `index.css`):
 - Shell: `.page`, `.panel` + `.panel-head` / `.panel-icon` / `.panel-title` / `.panel-sub` /
@@ -212,9 +242,12 @@ colors or surfaces. Icons are inline SVG from `src/icons.jsx` (no emoji in the p
 - Forms: `.field`, `.label`, `.input`, `.select`, `.form-box`
 - Auth: `.login-card` + `.login-head` / `.login-arch` (arch monogram) / `.login-sub`, `.alert`
 - Tabs: `.tabs` / `.tab` (underline style, used by admin and the cashier view toggle)
-- Customer menu: `.menu-page` / `.menu-head` / `.menu-arch*`, `.cat-title`, `.prod-card` /
-  `.prod-thumb` / `.stepper` / `.qty-btn`, `.cart-bar` + `.cart-*`, `.confirm-overlay` / `.confirm-card`,
-  and the running-tab panel `.tab-panel` / `.tab-total` / `.tab-items` / `.tab-item` / `.status-tag`
+- Customer menu: `.menu-page` / `.menu-head` / `.menu-arch*` (+ `--loading` skeleton),
+  `.cat-title` (Marcellus, the one brand voice inside the menu), `.prod-list` (one surface per
+  category) > `.prod-card` (hairline-separated rows) / `.prod-thumb` / `.stepper` / `.qty-btn`,
+  `.cart-bar` + `.cart-peek*` (collapsed one-liner) / `.cart-*`, `.confirm-overlay` /
+  `.confirm-card`, and the running-tab panel `.tab-panel` / `.tab-total` / `.tab-items` /
+  `.tab-item` / `.status-tag`
 - Waiter: `.table-card` (+ `--free` / `--busy` / `--pending`), `.pending-cart` (the batch-before-send
   basket), modal `.line-row` (+ `--pending`), `.add-chip`
 - Cashier: `.order-card` (+ `--pending`) / `.order-*` / `.order-deliver`
@@ -228,6 +261,17 @@ colors or surfaces. Icons are inline SVG from `src/icons.jsx` (no emoji in the p
 revenue trend, olive for top-products), no chart library. Follow the `dataviz` skill: thin marks,
 rounded data-ends, direct value labels, recessive axes, `<title>` hover, `prefers-reduced-motion`
 respected.
+
+**Touch & scale conventions** (set on the customer menu, carry them to the other screens):
+- Spacing sits on a **4px grid** (`4/8/12/16/20/24/32`) — the same grid Tailwind's `--spacing`
+  utilities use, so `p-3` and hand-written CSS agree.
+- **Tap targets ≥ 40px** (`.qty-btn` is 40, `.btn-sm` has `min-height: 40px`). Apple HIG says 44,
+  Material 48. This matters on the phone menu *and* the waiter/cashier tablets.
+- **Hover goes inside `@media (hover: hover)`; touch feedback belongs in `:active`.** On a
+  touchscreen a bare `:hover` either never fires or sticks after the tap. Tailwind's `hover:`
+  variant already ships wrapped in `@media (hover: hover)` — utilities get this for free.
+- Anything pinned to the bottom must respect `env(safe-area-inset-bottom)`; `index.html` sets
+  `viewport-fit=cover`, without which that inset always reads 0.
 
 **Animation conventions:** cards enter with a staggered reveal — add `className="... reveal"` and
 `style={{ '--i': index }}`. Keyframes (`fade-in-up`, `pop-in`, `pulse`, `shake`, `spin`) live in

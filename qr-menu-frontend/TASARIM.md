@@ -77,9 +77,27 @@ baştan giydirebilirsin.
 - **Dosya adı büyük/küçük harf.** `App.jsx` içinde `import Admin from './Admin'` yazar.
   Windows umursamaz ama sunucudaki Linux umursar — adı `admin.jsx` yaparsan yerelde
   çalışır, canlıda **build patlar**. Mevcut adları koru: `App`, `Admin`, `Cashier`, `Waiter`.
-- **Tailwind YOK.** `package.json`'da görünür ama bağlı değil (config yok).
-  `className="flex gap-4"` hiçbir şey yapmaz. Ya inline `style` kullan ya da `index.css`'e
-  gerçek CSS yaz. Daha temiz iş için stilleri `index.css`'e taşımak önerilir.
+- **Tailwind v4 BAĞLI** (`@tailwindcss/vite`). `className="flex gap-4"` çalışır. Ama kural şu:
+
+  > **2+ yerde geçen isimlendirilmiş tasarım nesnesi** (`.btn`, `.panel`, `.prod-card`)
+  > `index.css`'te `@layer components` içinde kalır. **Tek seferlik yerleşim/boşluk**
+  > utility ile yazılır (`mt-5`, `flex-1`, `text-center`).
+
+  `.btn`'i JSX'e `inline-flex items-center gap-1.5 px-4 py-2.5 ...` diye açma: 6 ekrana
+  kopyalanır, bugün tek yerden değişen buton yarın 40 yerden değişir.
+- **`index.css`'e yazdığın her kural bir `@layer` içinde olmalı.** Katmansız CSS *tüm*
+  utility'leri yener — dışarıda bırakırsan `className="prod-card mb-3"` yazdığında `mb-3`
+  sessizce çalışmaz ve "Tailwind bozuk" sanırsın.
+- **Renk paleti kilitli.** `@theme { --color-*: initial }` ile Tailwind'in hazır rampaları
+  kaldırıldı: `bg-blue-500` **derlenmez**. Renk lazımsa `bg-sea` / `text-ink` / `bg-olive`
+  gibi Mavi Liman token'larını kullan. Yeni renk = önce `:root`'a token, sonra `@theme inline`
+  köprüsüne bir satır.
+- **`:root` tek kaynak.** `var(--sea)` ve `bg-sea` aynı değere çözülür; `@theme inline`
+  sayesinde ayrı bir `--color-sea` üretilmez. Token değerini **sadece `:root`'ta** değiştir.
+- **`.reveal` + `style={{'--i': index}}`'e dokunma.** `animation-delay: calc(var(--i,0)*55ms)`
+  utility'ye çevrilmemeli; bu, kalan tek meşru inline `style`.
+- **Fontlar `index.html`'de** `<link>` ile. `index.css`'e `@import url(...)` ile geri koyma:
+  `@import 'tailwindcss'` build'de açıldığı için font import'u arkada kalır ve sessizce düşer.
 - **Yönlendirme `App.jsx` içinde** `window.location.pathname` ile. react-router kurma;
   yeni ekran = App.jsx'e bir `pathname` kontrolü daha.
 - **`?table=<uuid>` parametresi** müşteri menüsünün olmazsa olmazı. Menüyü yerelde test
