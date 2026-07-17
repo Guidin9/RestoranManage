@@ -5,16 +5,23 @@
    zeytin yeşili aksanlar, terakota uyarılar. Gövde yazısı Hanken Grotesk.
    Tüm ekranlar (müşteri / garson / kasa / yönetici) bu sistemi paylaşır.
    Görünüm burada; ekran JSX'leri yalnızca className kullanır.
+
+   Tailwind v4 ile birlikte çalışır. İki katman kuralı:
+   - İsimlendirilmiş tasarım nesneleri (.btn, .panel, .prod-card ...) burada,
+     @layer components içinde yaşar.
+   - Tek seferlik yerleşim/boşluk JSX'te utility ile yazılır (mt-5, flex-1 ...).
+   Katman şart: katmansız CSS tüm utility'leri yener, o yüzden buradaki
+   her kural bir @layer içinde olmalı — yoksa className="prod-card mb-3"
+   yazdığında mb-3 sessizce çalışmaz.
+
+   Fontlar index.html'de <link> ile yükleniyor (@import zincirli istek olurdu).
    ========================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Marcellus&display=swap');
+@import 'tailwindcss';
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
+/* Tasarım token'ları — TEK KAYNAK. Bilerek katmansız: böylece Tailwind'in
+   kendi @layer theme default'larını yener (rounded-md → 16px, ease-out →
+   bizim eğrimiz) ve var(--x) kullanan ~120 kural hiç değişmeden çalışır. */
 :root {
   /* Mürekkep (metin) tonları */
   --ink: #123240;
@@ -39,7 +46,11 @@
   --line-strong: rgba(18, 50, 64, 0.16);
   --deep-grad: linear-gradient(160deg, #1a4759, #123240);
 
-  --radius: 22px;
+  /* Tailwind'in --radius-* namespace'iyle aynı isimler: rounded-lg/md/sm
+     utility'leri bu değerlere çözülür. (Eskiden --radius idi; TW'nin
+     namespace'i dışında kaldığı için ölçek bozuluyordu: rounded-lg 8px'te
+     kalırken rounded-sm 11px oluyordu.) */
+  --radius-lg: 22px;
   --radius-md: 16px;
   --radius-sm: 11px;
 
@@ -59,29 +70,76 @@
   text-rendering: optimizeLegibility;
 }
 
-html,
-body,
-#root {
-  margin: 0;
-  min-height: 100vh;
+/* Paleti kilitle: Tailwind'in 22 hazır renk rampasını (blue-500, red-400 ...)
+   tamamen kaldırır. Mavi Liman dışında bir renk yazmak artık derlenmez —
+   "palet değişmesin" bir niyet değil, kısıt. Bundle'dan da ~20KB düşer. */
+@theme {
+  --color-*: initial;
+  --color-white: #fff;
+  --color-black: #000;
+
+  /* Sadece sistemin üç basamağı kalsın (değerleri yukarıdaki :root verir) */
+  --radius-xs: initial;
+  --radius-xl: initial;
+  --radius-2xl: initial;
+  --radius-3xl: initial;
+  --radius-4xl: initial;
 }
 
-body {
-  background: linear-gradient(180deg, #d7e5e0 0%, #eef2e6 58%) fixed;
-  overflow-x: hidden;
+/* Token köprüsü — :root'u Tailwind'in namespace'ine bağlar, böylece
+   bg-sea / text-ink / font-serif gibi utility'ler üretilir.
+   'inline' kritik: bg-sea doğrudan var(--sea)'ye çözülür, ayrı bir
+   --color-sea değişkeni HİÇ üretilmez. Yani tek kaynak :root kalır,
+   iki isim/iki değer ikilemi ve drift riski oluşmaz. */
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+  --color-sea: var(--sea);
+  --color-sea-deep: var(--sea-deep);
+  --color-olive: var(--olive);
+  --color-olive-deep: var(--olive-deep);
+  --color-olive-light: var(--olive-light);
+  --color-terra: var(--terra);
+  --color-warn: var(--warn);
+  --color-paper: var(--paper);
+  --color-paper-soft: var(--paper-soft);
+  --color-sand: var(--sand);
+  --color-mist: var(--mist);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --font-sans: var(--sans);
+  --font-serif: var(--serif);
 }
 
-h1, h2, h3, h4, h5 {
-  font-family: var(--serif);
-  font-weight: 400;
-  color: var(--ink);
-  line-height: 1.12;
-  margin: 0;
+@layer base {
+  html,
+  body,
+  #root {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  body {
+    background: linear-gradient(180deg, #d7e5e0 0%, #eef2e6 58%) fixed;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--serif);
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.12;
+    margin: 0;
+  }
+  p { margin: 0; line-height: 1.5; }
+  a { color: var(--sea); text-decoration: none; }
+  a:hover { color: var(--sea-deep); }
+  svg { display: block; }
 }
-p { margin: 0; line-height: 1.5; }
-a { color: var(--sea); text-decoration: none; }
-a:hover { color: var(--sea-deep); }
-svg { display: block; }
+
+@layer components {
 
 .muted { color: var(--ink-dim); }
 
@@ -117,7 +175,7 @@ svg { display: block; }
 .panel {
   background: var(--paper);
   border: 1px solid rgba(18, 50, 64, 0.06);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-panel);
 }
@@ -158,7 +216,7 @@ svg { display: block; }
 .dot-live {
   width: 7px; height: 7px; border-radius: 999px;
   background: var(--olive-light);
-  animation: pulse 1.6s ease-in-out infinite;
+  animation: ml-pulse 1.6s ease-in-out infinite;
 }
 
 /* =========================================================================
@@ -296,7 +354,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   max-width: 420px;
   background: var(--paper);
   border: 1px solid rgba(18, 50, 64, 0.06);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 30px 70px -36px rgba(18, 50, 64, 0.55);
   animation: pop-in 0.55s var(--ease-out) both;
@@ -687,11 +745,11 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .dot-pending {
   width: 7px; height: 7px; border-radius: 999px;
   background: var(--warn);
-  animation: pulse 1.4s ease-in-out infinite;
+  animation: ml-pulse 1.4s ease-in-out infinite;
 }
 
 /* Bekleyen kalem/kart vurgusu */
-.table-card--pending { border-color: rgba(211, 162, 86, 0.6) !important; box-shadow: 0 0 0 2px rgba(211, 162, 86, 0.18); }
+.table-card--pending { border-color: rgba(211, 162, 86, 0.6); box-shadow: 0 0 0 2px rgba(211, 162, 86, 0.18); }
 .order-card--pending { border-color: rgba(211, 162, 86, 0.55); box-shadow: 0 0 0 2px rgba(211, 162, 86, 0.16), var(--shadow-card); }
 .line-row--pending { border-color: rgba(211, 162, 86, 0.4); background: rgba(211, 162, 86, 0.08); }
 
@@ -743,7 +801,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   max-height: 88vh;
   overflow: auto;
   background: var(--paper);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   box-shadow: 0 40px 90px -30px rgba(18, 50, 64, 0.7);
   animation: pop-in 0.4s var(--ease-out) both;
 }
@@ -1089,18 +1147,6 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .item-name { flex: 1; font: 600 14px/1.2 var(--sans); color: var(--ink); }
 .item-price { font: 700 14px/1 var(--sans); color: var(--ink); }
 
-/* =========================================================================
-   Keyframes & erişilebilirlik
-   ========================================================================= */
-
-@keyframes fade-in    { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fade-in-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slide-up   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pop-in     { 0% { opacity: 0; transform: scale(0.96) translateY(8px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
-@keyframes shake      { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
-@keyframes pulse      { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.6); } }
-@keyframes spin       { to { transform: rotate(360deg); } }
-
 .spinner {
   width: 34px; height: 34px;
   border: 3px solid var(--line);
@@ -1110,15 +1156,35 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   margin: 0 auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-}
+} /* ← @layer components sonu */
 
-/* İnce kaydırma çubuğu */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
-::-webkit-scrollbar-track { background: transparent; }
+/* =========================================================================
+   Keyframes — @layer kapsamı dışında (keyframes katmanlanmaz; doküman
+   sırasına göre son tanım kazanır).
+   ml-pulse: Tailwind --animate-pulse ile 'pulse' adını rezerve ediyor ve
+   onunki sadece opacity. Bizimki opacity+scale — ad çakışmasın diye
+   'ml-' (Mavi Liman) öneki aldı.
+   ========================================================================= */
+
+@keyframes fade-in    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-in-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slide-up   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pop-in     { 0% { opacity: 0; transform: scale(0.96) translateY(8px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes shake      { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+@keyframes ml-pulse   { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.6); } }
+@keyframes spin       { to { transform: rotate(360deg); } }
+
+@layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  /* İnce kaydırma çubuğu */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
