@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover: sepet barının env(safe-area-inset-bottom) ile
+         iPhone home indicator'ının üstünde kalabilmesi için şart. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Mavi Liman fontları: Marcellus (başlık) + Hanken Grotesk (gövde).
          index.css'teki @import yerine burada: @import zincirli bir istek
          (önce CSS inip parse edilmeli, sonra font istenir), <link> paralel gider. -->

@@ -4,7 +4,7 @@ import Waiter from './Waiter';
 import Admin from './Admin';
 import Kitchen from './Kitchen';
 import { apiFetch } from './api';
-import { IconPlus, IconMinus, IconCheck, IconBag } from './icons';
+import { IconPlus, IconMinus, IconCheck, IconBag, IconCloche, IconChevronUp } from './icons';
 
 function App() {
     // DİREKT LINK KONTROLLERİ
@@ -15,6 +15,7 @@ function App() {
     const [menu, setMenu] = useState([]);
     const [cart, setCart] = useState([]);
     const [orderConfirmed, setOrderConfirmed] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);   // sepet barı katlı mı (yalnızca görünüm)
 
     // DİNAMİK ALANLARIMIZ
     const [tableNumber, setTableNumber] = useState('Yükleniyor...');
@@ -139,8 +140,8 @@ function App() {
                         <h2>Bir sorun var</h2>
                         <p className="login-sub">Menüye ulaşılamadı</p>
                     </div>
-                    <div className="login-body" style={{ textAlign: 'center' }}>
-                        <p className="muted" style={{ fontSize: 13 }}>{error}</p>
+                    <div className="login-body text-center">
+                        <p className="muted text-[13px]">{error}</p>
                     </div>
                 </div>
             </div>
@@ -156,7 +157,9 @@ function App() {
                     <div className="menu-brand">Mert'in QR Menü</div>
                 </div>
                 <div className="menu-arch">
-                    <div className="menu-arch-shape">{tableNumber}</div>
+                    <div className={tableId === null ? 'menu-arch-shape menu-arch-shape--loading' : 'menu-arch-shape'}>
+                        {tableId === null ? '' : tableNumber}
+                    </div>
                     <div className="menu-arch-label">Masa</div>
                 </div>
             </header>
@@ -191,61 +194,76 @@ function App() {
             {menu.map((category, ci) => (
                 <section key={category.id} className="reveal" style={{ '--i': ci }}>
                     <h3 className="cat-title">{category.name}</h3>
-                    {category.products.map((product) => {
-                        const qty = getItemQuantity(product.id);
-                        return (
-                            <div key={product.id} className="prod-card">
-                                {product.image_url ? (
-                                    <img src={product.image_url} alt={product.name} className="prod-thumb" />
-                                ) : (
-                                    <div className="prod-thumb prod-thumb--empty"><span>foto</span></div>
-                                )}
-                                <div className="prod-body">
-                                    <div className="prod-name">{product.name}</div>
-                                    <div className="prod-foot">
-                                        <span className="prod-price">{product.price} ₺</span>
-                                        {qty > 0 ? (
-                                            <div className="stepper">
-                                                <button onClick={() => removeFromCart(product.id)} className="qty-btn"><IconMinus size={15} /></button>
-                                                <span className="qty-num">{qty}</span>
-                                                <button onClick={() => addToCart(product)} className="qty-btn qty-btn--inc"><IconPlus size={15} /></button>
-                                            </div>
-                                        ) : (
-                                            <button onClick={() => addToCart(product)} className="btn btn-success btn-sm"><IconPlus size={14} />Ekle</button>
-                                        )}
+                    <div className="prod-list">
+                        {category.products.map((product) => {
+                            const qty = getItemQuantity(product.id);
+                            return (
+                                <div key={product.id} className="prod-card">
+                                    {product.image_url ? (
+                                        <img src={product.image_url} alt={product.name} className="prod-thumb" />
+                                    ) : (
+                                        <div className="prod-thumb prod-thumb--empty" aria-hidden="true"><IconCloche size={22} /></div>
+                                    )}
+                                    <div className="prod-body">
+                                        <div className="prod-name">{product.name}</div>
+                                        <div className="prod-foot">
+                                            <span className="prod-price">{product.price} ₺</span>
+                                            {qty > 0 ? (
+                                                <div className="stepper">
+                                                    <button onClick={() => removeFromCart(product.id)} className="qty-btn" aria-label={`${product.name} adetini azalt`}><IconMinus size={16} /></button>
+                                                    <span className="qty-num">{qty}</span>
+                                                    <button onClick={() => addToCart(product)} className="qty-btn qty-btn--inc" aria-label={`${product.name} adetini artır`}><IconPlus size={16} /></button>
+                                                </div>
+                                            ) : (
+                                                <button onClick={() => addToCart(product)} className="btn btn-success btn-sm"><IconPlus size={14} />Ekle</button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </section>
             ))}
 
             {cart.length > 0 && (
                 <div className="cart-bar">
-                    <div className="cart-top">
-                        <div className="cart-bag">
+                    {/* Katlı hal: tek satır. Dokununca ürün listesi açılır. */}
+                    <button
+                        className="cart-peek"
+                        onClick={() => setCartOpen(o => !o)}
+                        aria-expanded={cartOpen}
+                    >
+                        <span className="cart-bag">
                             <IconBag size={21} />
                             <span className="cart-count">{cart.reduce((n, i) => n + i.quantity, 0)}</span>
-                        </div>
+                        </span>
                         <span className="cart-title">Sepetim</span>
-                        <span className="cart-meta">{cart.reduce((n, i) => n + i.quantity, 0)} ürün</span>
-                    </div>
-                    <ul className="cart-lines">
-                        {cart.map(item => (
-                            <li key={item.id} className="cart-line">
-                                <span className="cart-qty">{item.quantity}×</span>
-                                <span className="cart-name">{item.name}</span>
-                                <span className="cart-price">{(item.price * item.quantity).toFixed(2)} ₺</span>
-                            </li>
-                        ))}
-                    </ul>
+                        <span className="cart-peek-total">{calculateTotal()} ₺</span>
+                        <IconChevronUp
+                            size={18}
+                            className={cartOpen ? 'cart-chevron cart-chevron--open' : 'cart-chevron'}
+                        />
+                    </button>
+
+                    {cartOpen && (
+                        <ul className="cart-lines mt-3">
+                            {cart.map(item => (
+                                <li key={item.id} className="cart-line">
+                                    <span className="cart-qty">{item.quantity}×</span>
+                                    <span className="cart-name">{item.name}</span>
+                                    <span className="cart-price">{(item.price * item.quantity).toFixed(2)} ₺</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
                     <div className="cart-foot">
-                        <div style={{ flex: 1 }}>
+                        <div className="flex-1">
                             <div className="cart-total-label">Toplam</div>
                             <div className="cart-total">{calculateTotal()} ₺</div>
                         </div>
-                        <button onClick={submitOrder} className="btn btn-success">Sepeti Onayla<IconCheck size={15} /></button>
+                        <button onClick={submitOrder} className="btn btn-success min-h-12">Sepeti Onayla<IconCheck size={15} /></button>
                     </div>
                 </div>
             )}
@@ -256,7 +274,7 @@ function App() {
                         <div className="confirm-icon"><IconCheck size={32} sw={2.4} /></div>
                         <div className="confirm-title">Siparişiniz alındı</div>
                         <div className="confirm-sub">Garsonumuz masanıza getiriyor. Afiyet olsun!</div>
-                        <button onClick={() => setOrderConfirmed(false)} className="btn btn-ink btn-block" style={{ marginTop: 20 }}>Menüye Dön</button>
+                        <button onClick={() => setOrderConfirmed(false)} className="btn btn-ink btn-block mt-5">Menüye Dön</button>
                     </div>
                 </div>
             )}
