@@ -242,12 +242,9 @@ prefixing). `index.css` starts with `@import 'tailwindcss'`. The rules that matt
 - Forms: `.field`, `.label`, `.input`, `.select`, `.form-box`
 - Auth: `.login-card` + `.login-head` / `.login-arch` (arch monogram) / `.login-sub`, `.alert`
 - Tabs: `.tabs` / `.tab` (underline style, used by admin and the cashier view toggle)
-- Customer menu: `.menu-page` / `.menu-head` / `.menu-arch*` (+ `--loading` skeleton),
-  `.cat-title` (Marcellus, the one brand voice inside the menu), `.prod-list` (one surface per
-  category) > `.prod-card` (hairline-separated rows) / `.prod-thumb` / `.stepper` / `.qty-btn`,
-  `.cart-bar` + `.cart-peek*` (collapsed one-liner) / `.cart-*`, `.confirm-overlay` /
-  `.confirm-card`, and the running-tab panel `.tab-panel` / `.tab-total` / `.tab-items` /
-  `.tab-item` / `.status-tag`
+- Customer menu: `.menu-page` / `.menu-head` / `.menu-arch*`, `.cat-title`, `.prod-card` /
+  `.prod-thumb` / `.stepper` / `.qty-btn`, `.cart-bar` + `.cart-*`, `.confirm-overlay` / `.confirm-card`,
+  and the running-tab panel `.tab-panel` / `.tab-total` / `.tab-items` / `.tab-item` / `.status-tag`
 - Waiter: `.table-card` (+ `--free` / `--busy` / `--pending`), `.pending-cart` (the batch-before-send
   basket), modal `.line-row` (+ `--pending`), `.add-chip`
 - Cashier: `.order-card` (+ `--pending`) / `.order-*` / `.order-deliver`
@@ -262,16 +259,12 @@ revenue trend, olive for top-products), no chart library. Follow the `dataviz` s
 rounded data-ends, direct value labels, recessive axes, `<title>` hover, `prefers-reduced-motion`
 respected.
 
-**Touch & scale conventions** (set on the customer menu, carry them to the other screens):
-- Spacing sits on a **4px grid** (`4/8/12/16/20/24/32`) — the same grid Tailwind's `--spacing`
-  utilities use, so `p-3` and hand-written CSS agree.
-- **Tap targets ≥ 40px** (`.qty-btn` is 40, `.btn-sm` has `min-height: 40px`). Apple HIG says 44,
-  Material 48. This matters on the phone menu *and* the waiter/cashier tablets.
-- **Hover goes inside `@media (hover: hover)`; touch feedback belongs in `:active`.** On a
-  touchscreen a bare `:hover` either never fires or sticks after the tap. Tailwind's `hover:`
-  variant already ships wrapped in `@media (hover: hover)` — utilities get this for free.
-- Anything pinned to the bottom must respect `env(safe-area-inset-bottom)`; `index.html` sets
-  `viewport-fit=cover`, without which that inset always reads 0.
+**The current look is settled — don't "modernize" it unprompted.** A 2026-07-17 redesign of the
+customer menu (Marcellus category headings, one surface per category, 40px tap targets, collapsible
+cart) was built, deployed, and **rejected**: the user preferred the existing layout. Tailwind was
+kept, the visual changes were reverted (`git revert 9c2f6b0`). Treat the present spacing/type/
+density as intentional. Restyling work needs an explicit request, and even then it should land in
+its own commit, separate from any infrastructure change.
 
 **Animation conventions:** cards enter with a staggered reveal — add `className="... reveal"` and
 `style={{ '--i': index }}`. Keyframes (`fade-in-up`, `pop-in`, `pulse`, `shake`, `spin`) live in
