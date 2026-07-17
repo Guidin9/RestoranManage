@@ -18,6 +18,7 @@ function App() {
     const [tableNumber, setTableNumber] = useState('Yükleniyor...');
     const [tableId, setTableId] = useState(null);
     const [tableTotal, setTableTotal] = useState(0);      // masanın açık adisyon toplamı (herkesin siparişi)
+    const [tableItems, setTableItems] = useState([]);     // masaya sipariş edilen ürünler (teslim durumuyla)
     const [error, setError] = useState(null);
     const isAdminRoute = window.location.pathname === '/admin';
 
@@ -42,6 +43,7 @@ function App() {
                         setTableNumber(res.table_number);
                         setTableId(res.table_id);
                         setTableTotal(res.active_order_total || 0);
+                        setTableItems(res.active_order_items || []);
                     } else {
                         setError("Hatalı veya geçersiz bir QR kod okuttunuz!");
                     }
@@ -155,9 +157,25 @@ function App() {
             </header>
 
             {tableTotal > 0 && (
-                <div className="tab-total">
-                    <span className="tab-total-label">Masa Hesabı</span>
-                    <span className="tab-total-value">{tableTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                <div className="tab-panel">
+                    <div className="tab-total">
+                        <span className="tab-total-label">Masa Hesabı</span>
+                        <span className="tab-total-value">{tableTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                    </div>
+                    {tableItems.length > 0 && (
+                        <ul className="tab-items">
+                            {tableItems.map((it, i) => (
+                                <li key={i} className="tab-item">
+                                    <span className="tab-item-qty">{it.quantity}×</span>
+                                    <span className="tab-item-name">{it.name}</span>
+                                    <span className={`status-tag ${it.is_delivered ? 'status-tag--ok' : 'status-tag--wait'}`}>
+                                        {it.is_delivered ? 'Servis edildi' : 'Hazırlanıyor'}
+                                    </span>
+                                    <span className="tab-item-price">{it.line_total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             )}
 

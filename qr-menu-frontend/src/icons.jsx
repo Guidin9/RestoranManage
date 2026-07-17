@@ -112,3 +112,19 @@ export const IconCloche = (p) => (
 export const IconMail = (p) => (
     <Svg sw={1.5} {...p}><path d="M4 4h16v12H4z" /><path d="m4 8 8 5 8-5" /></Svg>
 );
+
+export const IconBell = (p) => (
+    <Svg {...p}>
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+        <path d="M21 19H3l1.6-2.2A6 6 0 0 0 6 13.2V10a6 6 0 0 1 12 0v3.2a6 6 0 0 0 1.4 3.6Z" />
+    </Svg>
+);
+
+export const IconTruck = (p) => (
+    <Svg {...p}>
+        <path d="M14 18V6a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1" />
+        <path d="M14 9h4l3 3v5a1 1 0 0 1-1 1h-1" />
+        <circle cx="7" cy="18" r="2" />
+        <circle cx="17" cy="18" r="2" />
+    </Svg>
+);

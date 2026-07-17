@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
-import { IconCard, IconLogout, IconLogin, IconCloche } from './icons';
+import { IconCard, IconLogout, IconLogin, IconCloche, IconBell, IconTruck } from './icons';
 import CashierSummary from './CashierSummary';
 
 function Cashier() {
@@ -103,6 +103,22 @@ function Cashier() {
         return items.reduce((total, item) => total + (item.price_at_sale * item.quantity), 0).toFixed(2);
     };
 
+    // Teslim bekleyen (yeni) kalem sayısı — kart vurgusu / banner / buton için
+    const orderPendingCount = (items) => items.reduce((n, i) => n + (i.pending_quantity || 0), 0);
+    const pendingOrderCount = orders.filter(o => orderPendingCount(o.items) > 0).length;
+
+    // Hesabı teslim edildi işaretle (tüm bekleyen kalemler)
+    const handleDeliverOrder = (orderId) => {
+        apiFetch(`/api/cashier/orders/${orderId}/deliver`, { role: 'cashier', method: 'POST' })
+            .then(res => {
+                if (res.success) fetchActiveOrders();
+            })
+            .catch(err => {
+                if (err instanceof UnauthorizedError) { setIsAuthenticated(false); return; }
+                alert("Teslim işaretlenemedi, sunucuya ulaşılamıyor.");
+            });
+    };
+
     // 🔴 EĞER GİRİŞ YAPILMADIYSA: GİRİŞ EKRANINI GÖSTER
     if (!isAuthenticated) {
         return (
@@ -179,38 +195,61 @@ function Cashier() {
                             <p>Yeni siparişler geldikçe burada listelenecek.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cards">
-                            {orders.map((order, oi) => (
-                                <div key={order.id} className="order-card reveal" style={{ '--i': oi }}>
-                                    <div className="order-head">
-                                        <span className="order-table">
-                                            {order.table?.table_number || `Masa ID: ${order.table_id}`}
-                                        </span>
-                                        <span className="order-time">
-                                            açılış {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-
-                                    <ul className="order-lines">
-                                        {order.items.map(item => (
-                                            <li key={item.id} className="order-line">
-                                                <span className="line-qty">{item.quantity}×</span>
-                                                <span className="order-line-name">{item.product ? item.product.name : 'Ürün'}</span>
-                                                <span className="order-line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                    <div className="order-total">
-                                        <span className="order-total-label">Toplam</span>
-                                        <span className="order-total-value">{calculateOrderTotal(order.items)} ₺</span>
-                                    </div>
-                                    <button onClick={() => setClosingOrder(order)} className="order-pay">
-                                        <IconCard size={16} />Hesabı Kapat / Öde
-                                    </button>
+                        <>
+                            {pendingOrderCount > 0 && (
+                                <div className="alert-banner">
+                                    <IconBell size={17} />
+                                    <span><b>{pendingOrderCount} masada</b> teslim bekleyen sipariş var</span>
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                            <div className="grid grid-cards">
+                                {orders.map((order, oi) => {
+                                    const pending = orderPendingCount(order.items);
+                                    return (
+                                        <div key={order.id} className={`order-card reveal ${pending > 0 ? 'order-card--pending' : ''}`} style={{ '--i': oi }}>
+                                            <div className="order-head">
+                                                <span className="order-table">
+                                                    {order.table?.table_number || `Masa ID: ${order.table_id}`}
+                                                </span>
+                                                {pending > 0 ? (
+                                                    <span className="badge-pending"><span className="dot-pending" />Teslim bekliyor</span>
+                                                ) : (
+                                                    <span className="order-time">
+                                                        açılış {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <ul className="order-lines">
+                                                {order.items.map(item => (
+                                                    <li key={item.id} className="order-line">
+                                                        <span className="line-qty">{item.quantity}×</span>
+                                                        <span className="order-line-name">{item.product ? item.product.name : 'Ürün'}</span>
+                                                        {item.pending_quantity > 0 && (
+                                                            <span className="status-tag status-tag--wait">{item.pending_quantity} bekliyor</span>
+                                                        )}
+                                                        <span className="order-line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            <div className="order-total">
+                                                <span className="order-total-label">Toplam</span>
+                                                <span className="order-total-value">{calculateOrderTotal(order.items)} ₺</span>
+                                            </div>
+                                            {pending > 0 && (
+                                                <button onClick={() => handleDeliverOrder(order.id)} className="order-deliver">
+                                                    <IconTruck size={16} />Teslim Edildi ({pending} ürün)
+                                                </button>
+                                            )}
+                                            <button onClick={() => setClosingOrder(order)} className="order-pay">
+                                                <IconCard size={16} />Hesabı Kapat / Öde
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>

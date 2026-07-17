@@ -146,6 +146,10 @@ class OrderController extends Controller
 
         if ($item->quantity > 1) {
             $item->quantity -= 1;
+            // Teslim edilmiş miktar kalan adedi aşamaz.
+            if ($item->delivered_quantity > $item->quantity) {
+                $item->delivered_quantity = $item->quantity;
+            }
             $item->save();
         } else {
             $item->delete();
@@ -162,6 +166,26 @@ class OrderController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Ürün adisyondan düşüldü.']);
+    }
+
+    // Garson & Kasa İçin: Masa/hesap düzeyi teslim — siparişin tüm kalemlerini
+    // teslim edilmiş işaretle (delivered_quantity = quantity). Bekleyen uyarısı kalkar.
+    public function deliverOrder($id): JsonResponse
+    {
+        $order = Order::with('items')->find($id);
+
+        if (! $order) {
+            return response()->json(['success' => false, 'message' => 'Sipariş bulunamadı.'], 404);
+        }
+
+        foreach ($order->items as $item) {
+            if ($item->delivered_quantity !== (int) $item->quantity) {
+                $item->delivered_quantity = $item->quantity;
+                $item->save();
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Sipariş teslim edildi olarak işaretlendi.']);
     }
 
     // Kasa Ekranı İçin: Seçilen günün gün özeti + haftalık/aylık bağlam + grafik verisi.

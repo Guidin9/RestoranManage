@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('abilities:cashier')->group(function () {
         Route::get('/cashier/orders', [OrderController::class, 'activeOrders']);
         Route::post('/cashier/orders/{id}/pay', [OrderController::class, 'closeOrder']);
+        Route::post('/cashier/orders/{id}/deliver', [OrderController::class, 'deliverOrder']);
         Route::get('/cashier/summary', [OrderController::class, 'dailySummary']);
     });
 
@@ -54,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/waiter/tables', [OrderController::class, 'waiterTables']);
         Route::get('/waiter/menu', [OrderController::class, 'waiterMenu']);
         Route::post('/waiter/items/{id}/remove', [OrderController::class, 'removeOrderItem']);
+        Route::post('/waiter/orders/{id}/deliver', [OrderController::class, 'deliverOrder']);
     });
 
     // 👑 Admin

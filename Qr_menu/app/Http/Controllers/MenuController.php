@@ -24,19 +24,29 @@ class MenuController extends Controller
         // N+1 sorgusunu engellemek için ürünleri eager load ediyoruz.
         $menu = Category::with('products')->get();
 
-        // Masanın o ana kadarki açık adisyon toplamı — müşteri kendi sepetinden
-        // ayrı olarak masanın güncel borcunu (herkesin siparişi) görebilsin.
-        $activeOrder = Order::with('items')
+        // Masanın o ana kadarki açık adisyonu — müşteri kendi sepetinden ayrı olarak
+        // masanın güncel borcunu ve sipariş edilen ürünleri (teslim durumuyla) görebilsin.
+        $activeOrder = Order::with('items.product')
             ->where('table_id', $table->id)
             ->where('status', 'active')
             ->first();
 
         $activeTotal = 0;
         $activeItemCount = 0;
+        $activeItems = [];
         if ($activeOrder) {
             foreach ($activeOrder->items as $item) {
-                $activeTotal += $item->price_at_sale * $item->quantity;
+                $lineTotal = $item->price_at_sale * $item->quantity;
+                $activeTotal += $lineTotal;
                 $activeItemCount += $item->quantity;
+                $activeItems[] = [
+                    'name' => $item->product ? $item->product->name : 'Ürün',
+                    'quantity' => (int) $item->quantity,
+                    'price_at_sale' => (float) $item->price_at_sale,
+                    'line_total' => round($lineTotal, 2),
+                    'pending_quantity' => $item->pending_quantity,
+                    'is_delivered' => $item->is_delivered,
+                ];
             }
         }
 
@@ -47,6 +57,7 @@ class MenuController extends Controller
             'data' => $menu,
             'active_order_total' => round($activeTotal, 2),
             'active_order_item_count' => $activeItemCount,
+            'active_order_items' => $activeItems,
         ], 200);
     }
 }
