@@ -173,6 +173,11 @@ redesign was built, deployed, and rejected; those visual changes were reverted. 
 areas, dark mode — while keeping that layout and density intact. Restyling still needs an explicit
 request. Rationale and the do-not list: `qr-menu-frontend/CLAUDE.md`.
 
+**That redesign is half-delivered.** Stage 1 (foundation + customer menu) is live; Stage 2 (Waiter,
+Cashier, Kitchen, Admin) is not started. **`ASAMA-2.md` at the repo root is the handoff note** —
+read it before touching those screens; it has the remaining work with file:line targets and the
+traps already paid for, so no re-exploration is needed.
+
 ## Default credentials
 
 These are the **local-dev** defaults, set in `Qr_menu/.env` and seeded by `StaffSeeder`.
