@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react'
+import { AnimatePresence, m } from 'motion/react';
 import Cashier from './Cashier';
 import Waiter from './Waiter';
 import Admin from './Admin';
 import Kitchen from './Kitchen';
 import { apiFetch } from './api';
-import { IconPlus, IconMinus, IconCheck, IconBag } from './icons';
+import { IconPlus, IconMinus, IconCheck } from './icons';
+import { ICON } from './iconScale';
+import { CartSheet } from './CartSheet';
+import { Modal } from './Modal';
+import { useToast } from './useToast';
+import { fadeOut, springDefault } from './motion';
 
 function App() {
+    const toast = useToast();
     // DİREKT LINK KONTROLLERİ
     const isCashierRoute = window.location.pathname === '/cashier';
     const isWaiterRoute = window.location.pathname === '/waiter';
@@ -17,7 +24,9 @@ function App() {
     const [orderConfirmed, setOrderConfirmed] = useState(false);
 
     // DİNAMİK ALANLARIMIZ
-    const [tableNumber, setTableNumber] = useState('Yükleniyor...');
+    // null = henüz yüklenmedi. Eskiden burada 'Yükleniyor...' metni vardı ve
+    // kemer motifini ~200ms boyunca deforme ediyordu; artık iskelet gösteriliyor.
+    const [tableNumber, setTableNumber] = useState(null);
     const [tableId, setTableId] = useState(null);
     const [tableTotal, setTableTotal] = useState(0);      // masanın açık adisyon toplamı (herkesin siparişi)
     const [tableItems, setTableItems] = useState([]);     // masaya sipariş edilen ürünler (teslim durumuyla)
@@ -105,11 +114,11 @@ function App() {
                     setCart([]);
                     setOrderConfirmed(true);
                 } else {
-                    alert("Sipariş esnasında bir hata oluştu.");
+                    toast.error("Sipariş esnasında bir hata oluştu.");
                 }
             })
             .catch(() => {
-                alert("Sunucuya bağlanılamadı.");
+                toast.error("Sunucuya bağlanılamadı.");
             });
     };
 
@@ -139,8 +148,8 @@ function App() {
                         <h2>Bir sorun var</h2>
                         <p className="login-sub">Menüye ulaşılamadı</p>
                     </div>
-                    <div className="login-body" style={{ textAlign: 'center' }}>
-                        <p className="muted" style={{ fontSize: 13 }}>{error}</p>
+                    <div className="login-body text-center">
+                        <p className="muted text-[13px]">{error}</p>
                     </div>
                 </div>
             </div>
@@ -156,7 +165,9 @@ function App() {
                     <div className="menu-brand">Mert'in QR Menü</div>
                 </div>
                 <div className="menu-arch">
-                    <div className="menu-arch-shape">{tableNumber}</div>
+                    <div className="menu-arch-shape">
+                        {tableNumber ?? <span className="skel" aria-label="Masa numarası yükleniyor" />}
+                    </div>
                     <div className="menu-arch-label">Masa</div>
                 </div>
             </header>
@@ -168,21 +179,32 @@ function App() {
                         <span className="tab-total-value">{tableTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
                     </div>
                     {tableItems.length > 0 && (
+                        // 5sn'lik poll bu listeyi baştan yazıyor; layout animasyonu
+                        // olmadan satırlar kullanıcının gözü önünde ışınlanıyordu.
                         <ul className="tab-items">
-                            {tableItems.map((it, i) => (
-                                <li key={i} className="tab-item">
-                                    <span className="tab-item-qty">{it.quantity}×</span>
-                                    <span className="tab-item-name">{it.name}</span>
-                                    {it.stage === 'served' ? (
-                                        <span className="status-tag status-tag--ok">Servis edildi</span>
-                                    ) : it.stage === 'ready' ? (
-                                        <span className="status-tag status-tag--ready">Servise hazır</span>
-                                    ) : (
-                                        <span className="status-tag status-tag--wait">Hazırlanıyor</span>
-                                    )}
-                                    <span className="tab-item-price">{it.line_total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
-                                </li>
-                            ))}
+                            <AnimatePresence initial={false}>
+                                {tableItems.map((it, i) => (
+                                    <m.li
+                                        key={`${it.name}-${i}`}
+                                        className="tab-item"
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -4 }}
+                                        transition={{ opacity: fadeOut, y: springDefault }}
+                                    >
+                                        <span className="tab-item-qty">{it.quantity}×</span>
+                                        <span className="tab-item-name">{it.name}</span>
+                                        {it.stage === 'served' ? (
+                                            <span className="status-tag status-tag--ok">Servis edildi</span>
+                                        ) : it.stage === 'ready' ? (
+                                            <span className="status-tag status-tag--ready">Servise hazır</span>
+                                        ) : (
+                                            <span className="status-tag status-tag--wait">Hazırlanıyor</span>
+                                        )}
+                                        <span className="tab-item-price">{it.line_total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                                    </m.li>
+                                ))}
+                            </AnimatePresence>
                         </ul>
                     )}
                 </div>
@@ -206,12 +228,12 @@ function App() {
                                         <span className="prod-price">{product.price} ₺</span>
                                         {qty > 0 ? (
                                             <div className="stepper">
-                                                <button onClick={() => removeFromCart(product.id)} className="qty-btn"><IconMinus size={15} /></button>
+                                                <button onClick={() => removeFromCart(product.id)} className="qty-btn" aria-label={`${product.name} adedini azalt`}><IconMinus size={ICON.sm} /></button>
                                                 <span className="qty-num">{qty}</span>
-                                                <button onClick={() => addToCart(product)} className="qty-btn qty-btn--inc"><IconPlus size={15} /></button>
+                                                <button onClick={() => addToCart(product)} className="qty-btn qty-btn--inc" aria-label={`${product.name} adedini artır`}><IconPlus size={ICON.sm} /></button>
                                             </div>
                                         ) : (
-                                            <button onClick={() => addToCart(product)} className="btn btn-success btn-sm"><IconPlus size={14} />Ekle</button>
+                                            <button onClick={() => addToCart(product)} className="btn btn-success btn-sm"><IconPlus size={ICON.xs} />Ekle</button>
                                         )}
                                     </div>
                                 </div>
@@ -221,45 +243,24 @@ function App() {
                 </section>
             ))}
 
-            {cart.length > 0 && (
-                <div className="cart-bar">
-                    <div className="cart-top">
-                        <div className="cart-bag">
-                            <IconBag size={21} />
-                            <span className="cart-count">{cart.reduce((n, i) => n + i.quantity, 0)}</span>
-                        </div>
-                        <span className="cart-title">Sepetim</span>
-                        <span className="cart-meta">{cart.reduce((n, i) => n + i.quantity, 0)} ürün</span>
-                    </div>
-                    <ul className="cart-lines">
-                        {cart.map(item => (
-                            <li key={item.id} className="cart-line">
-                                <span className="cart-qty">{item.quantity}×</span>
-                                <span className="cart-name">{item.name}</span>
-                                <span className="cart-price">{(item.price * item.quantity).toFixed(2)} ₺</span>
-                            </li>
-                        ))}
-                    </ul>
-                    <div className="cart-foot">
-                        <div style={{ flex: 1 }}>
-                            <div className="cart-total-label">Toplam</div>
-                            <div className="cart-total">{calculateTotal()} ₺</div>
-                        </div>
-                        <button onClick={submitOrder} className="btn btn-success">Sepeti Onayla<IconCheck size={15} /></button>
-                    </div>
-                </div>
-            )}
+            <AnimatePresence>
+                {cart.length > 0 && (
+                    <CartSheet cart={cart} total={calculateTotal()} onSubmit={submitOrder} />
+                )}
+            </AnimatePresence>
 
-            {orderConfirmed && (
-                <div className="confirm-overlay">
-                    <div className="confirm-card">
-                        <div className="confirm-icon"><IconCheck size={32} sw={2.4} /></div>
-                        <div className="confirm-title">Siparişiniz alındı</div>
-                        <div className="confirm-sub">Garsonumuz masanıza getiriyor. Afiyet olsun!</div>
-                        <button onClick={() => setOrderConfirmed(false)} className="btn btn-ink btn-block" style={{ marginTop: 20 }}>Menüye Dön</button>
-                    </div>
-                </div>
-            )}
+            <Modal
+                open={orderConfirmed}
+                onClose={() => setOrderConfirmed(false)}
+                labelledBy="confirm-title"
+                overlayClassName="confirm-overlay"
+                className="confirm-card"
+            >
+                <div className="confirm-icon"><IconCheck size={ICON.xl} sw={2.4} /></div>
+                <div className="confirm-title" id="confirm-title">Siparişiniz alındı</div>
+                <div className="confirm-sub">Garsonumuz masanıza getiriyor. Afiyet olsun!</div>
+                <button onClick={() => setOrderConfirmed(false)} className="btn btn-ink btn-block mt-5">Menüye Dön</button>
+            </Modal>
         </div>
     )
 }

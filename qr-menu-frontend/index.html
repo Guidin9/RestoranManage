@@ -1,9 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover: başlık gradient'i çentik/durum çubuğu alanına
+         taşsın diye. Karşılığında güvenli alan boşlukları index.css'te
+         env(safe-area-inset-*) ile veriliyor. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Tarayıcı kabuğu .menu-head'in üst durağıyla aynı renkte olsun -->
+    <meta name="theme-color" content="#1a4759" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1e5266" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Masanızdaki QR kodu okutun, menüyü görün ve siparişinizi doğrudan verin." />
     <!-- Mavi Liman fontları: Marcellus (başlık) + Hanken Grotesk (gövde).
          index.css'teki @import yerine burada: @import zincirli bir istek
          (önce CSS inip parse edilmeli, sonra font istenir), <link> paralel gider. -->
@@ -11,9 +18,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Marcellus&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Marcellus&display=swap"
     />
-    <title>qr-menu-frontend</title>
+    <title>Mert'in QR Menü</title>
   </head>
   <body>
     <div id="root"></div>

@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test:motion": "node tests/motion.spec.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
+    "motion": "^13.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

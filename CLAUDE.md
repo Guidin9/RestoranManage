@@ -54,38 +54,15 @@ Windows note: PHP here runs via Laravel Herd and is on PATH only in PowerShell, 
 
 ## Deployment (Azure VM + Docker Compose)
 
-Live on an Azure Linux VM. Access: `ssh -i <RestoranManage_key.pem> Gui@20.19.211.64`;
-repo at `~/RestoranManage`. Root `docker-compose.yml` defines four services — `caddy`,
-`frontend`, `backend`, `db` — and the root `.env` (copied from `.env.example`) supplies
-config. `SITE_ADDRESS` is the single source of truth for the public host; `APP_URL` and
-`VITE_API_URL` derive from it. All four services use `restart: always`, so the stack comes
-back on its own after a VM reboot.
-
-Server specifics that bite:
-- **Use `sudo docker compose` (V2, space).** The old `docker-compose` (V1, hyphen) is
-  still installed but is broken against BuildKit images (`KeyError: 'ContainerConfig'`);
-  don't use it. `docker` needs `sudo` here — the `Gui` user isn't in the `docker` group.
-- **Deploy a UI-only change:** `git pull && sudo docker compose up -d --build frontend`
-  (30–60 s, backend/db untouched).
-- **Deploy a backend change:** `git pull && sudo docker compose up -d --build backend frontend`,
-  then apply any new migrations: `sudo docker compose exec -T backend php artisan migrate --force`.
-- **Never `down -v`** — that deletes the `restoranmanage_db_data` volume (real data).
-- Provision/refresh staff after editing `.env`:
-  `sudo docker compose exec -T backend php artisan db:seed --class=StaffSeeder --force`.
-- `APP_KEY`: generate on the server with `echo "base64:$(openssl rand -base64 32)"` —
-  `artisan key:generate` can't run before Compose validates the (still-empty) `APP_KEY`.
+Live on an Azure Linux VM, deployed with `sudo docker compose`. Full procedure — SSH access,
+build commands, migrations, StaffSeeder, and the server quirks that bite — is in the **`deploy`
+skill** (`.claude/skills/deploy/SKILL.md`); invoke it before touching the live stack.
 
 ## Architecture
 
 ### Routing: hand-rolled, no react-router
 
-`src/App.jsx` is both the customer menu screen and the app's router. It reads `window.location.pathname` directly and returns a different component per path:
-
-- `/cashier` → `Cashier.jsx` (two views via an in-panel toggle: "Açık Hesaplar" and "Gün Özeti" → `CashierSummary.jsx`)
-- `/kitchen` → `Kitchen.jsx` (kitchen tickets, no prices; mark items prepared)
-- `/waiter` → `Waiter.jsx` (table occupancy grid, add/remove items, serve prepared items)
-- `/admin` → `admin.jsx` (CRUD for waiters, tables, categories, products)
-- anything else → the customer menu, which requires a `?table=<uuid>` query param and 404s the QR lookup without it
+`src/App.jsx` is both the customer menu screen and the app's router. It reads `window.location.pathname` directly and returns a different component per path; the fallback path is the customer menu, which requires a `?table=<uuid>` query param and 404s the QR lookup without it.
 
 Adding a screen means adding another pathname check in `App.jsx`. Vite's dev server falls back to `index.html` in dev; in production `qr-menu-frontend/nginx.conf` does the same via `try_files ... /index.html`, which is what keeps a hard load of `/cashier` from 404ing.
 
@@ -180,101 +157,21 @@ Cashier ("Açık Hesaplar"), Waiter, and Kitchen poll their endpoints on a 3–5
 - **Filename casing.** `App.jsx` imports `./Admin`, `./Cashier`, `./Waiter`, `./CashierSummary`, `./icons` — these must keep matching their files exactly, since Windows dev is case-insensitive but the Linux Docker build is not.
 - **`Qr_menu/.env` is untracked** and must stay that way — it holds `APP_KEY` and the staff passwords. Only `.env.example` is committed.
 - **QR codes point at `window.location.origin`**, so they're only correct when generated from the domain customers will actually scan into.
+- **Never run `docker compose down -v` on the server** — that deletes the `restoranmanage_db_data` volume, i.e. the real production data.
 
 ## Styling — "Mavi Liman" design system
 
-All four screens share **one central stylesheet, `src/index.css`**, a light-only Mediterranean
-("Mavi Liman") theme imported from Claude Design. Screens are styled with `className`, not inline
-`style` objects; keep inline `style` only for one-off layout (spacing, grid template), never for
-colors or surfaces. Icons are inline SVG from `src/icons.jsx` (no emoji in the product UI).
+All four screens share **one central stylesheet, `src/index.css`** (Mediterranean theme, light +
+dark), with Tailwind v4 as a hybrid layer on top and `motion` for gesture-driven motion. **The full
+design-system rules — tokens, dark mode, the Tailwind v4 `@layer` contract, class conventions,
+charts, animation, the drag gesture — live in `qr-menu-frontend/CLAUDE.md`**, which loads
+automatically when working under that directory.
 
-**Fonts:** `--serif` = **Marcellus** (headings, table/panel titles, big numbers), `--sans` =
-**Hanken Grotesk** (body). Both loaded via `@import` at the top of `index.css`.
-
-**Design tokens** live in `:root`:
-- Ink/text: `--ink`, `--ink-dim`, `--ink-faint`
-- Accents: `--sea` / `--sea-deep` (deniz mavisi), `--olive` / `--olive-deep` / `--olive-light`
-  (zeytin), `--terra` (terakota, silme/uyarı), `--warn` (amber, teslim uyarısı)
-- Surfaces: `--paper`, `--paper-soft`, `--sand`, `--mist`, `--line`, `--line-strong`,
-  `--deep-grad` (the dark petrol panel-header gradient)
-- `--radius-lg` / `--radius-md` / `--radius-sm`, easing `--ease-spring` / `--ease-out`
-- Don't hardcode hex — use the tokens. (Exception: `CashierSummary.jsx`'s SVG charts use hex
-  constants because SVG presentation attributes don't resolve `var()`.)
-
-### Tailwind v4 — hybrid, not a replacement
-
-Tailwind is wired up via `@tailwindcss/vite` (**not** PostCSS — there is no `postcss.config.*`
-and no other PostCSS plugin; `postcss`/`autoprefixer` were removed and Lightning CSS handles
-prefixing). `index.css` starts with `@import 'tailwindcss'`. The rules that matter:
-
-- **Split rule.** A *named design object* used in 2+ places (`.btn`, `.panel`, `.prod-card`)
-  stays as CSS in `@layer components`. *One-off layout/spacing* is a utility in JSX
-  (`mt-5`, `flex-1`, `text-center`). Don't expand `.btn` into utilities at 6 call sites —
-  that's how variant drift starts.
-- **Every rule in `index.css` must live inside a `@layer`.** Unlayered CSS beats *all* layered
-  CSS including `utilities`, so a rule left outside silently kills `className="prod-card mb-3"`.
-  `@layer base` holds element/global rules (`html`, `body`, headings, `::-webkit-scrollbar`,
-  `prefers-reduced-motion`); everything else is `@layer components`. Preflight covers
-  `box-sizing`, so don't re-add it.
-- **`:root` is the single source of truth and is deliberately unlayered** — that's what makes it
-  beat Tailwind's own `@layer theme` defaults (`rounded-md` → 16px, `ease-out` → our curve).
-- **`@theme inline` bridges tokens to Tailwind's namespace** (`--color-sea: var(--sea)`), so
-  `bg-sea` resolves straight to `var(--sea)` and **no separate `--color-sea` is ever emitted**.
-  Change a value only in `:root`. Adding a color = a `:root` token + one bridge line.
-- **The palette is locked**: `@theme { --color-*: initial }` strips Tailwind's 22 built-in
-  ramps, so `bg-blue-500` **won't compile**. Only `white`/`black` were kept.
-- **`@keyframes` are outside layers** (keyframes aren't scoped by them). Our pulse is named
-  **`ml-pulse`** because Tailwind reserves `pulse` via `--animate-pulse` with a different curve.
-- **`.reveal` + `style={{'--i': index}}` stays as-is** — `calc(var(--i,0) * 55ms)` is the one
-  legitimate remaining inline `style`.
-- **Fonts load via `<link>` in `index.html`.** Don't move them back into `index.css`:
-  `@import 'tailwindcss'` expands inline, which would push a font `@import` behind real rules
-  and CSS spec drops it silently (fonts fall back to system).
-- Tailwind v4 requires **iOS 16.4+ / Chrome 111+** (`@property`, `color-mix`, cascade layers).
-  Accepted knowingly; relevant because random customer phones scan the QR menu.
-
-**Core classes** (all in `index.css`):
-- Shell: `.page`, `.panel` + `.panel-head` / `.panel-icon` / `.panel-title` / `.panel-sub` /
-  `.panel-body` / `.panel-actions` (dark-header white card used by waiter/cashier/admin)
-- Layout: `.row-between`, `.stack`, `.grid` + `.grid-cards` / `.grid-tables` / `.grid-wide`
-- Buttons: `.btn` + `.btn-primary` (sea) / `.btn-success` (olive) / `.btn-danger` (terra outline) /
-  `.btn-ink` / `.btn-logout` / `.btn-block` / `.btn-sm`, plus `.btn-text-danger`
-- Forms: `.field`, `.label`, `.input`, `.select`, `.form-box`
-- Auth: `.login-card` + `.login-head` / `.login-arch` (arch monogram) / `.login-sub`, `.alert`
-- Tabs: `.tabs` / `.tab` (underline style, used by admin and the cashier view toggle)
-- Customer menu: `.menu-page` / `.menu-head` / `.menu-arch*`, `.cat-title`, `.prod-card` /
-  `.prod-thumb` / `.stepper` / `.qty-btn`, `.cart-bar` + `.cart-*`, `.confirm-overlay` / `.confirm-card`,
-  and the running-tab panel `.tab-panel` / `.tab-total` / `.tab-items` / `.tab-item` / `.status-tag`
-- Waiter: `.table-card` (+ `--free` / `--busy` / `--pending`), `.pending-cart` (the batch-before-send
-  basket), modal `.line-row` (+ `--pending`), `.add-chip`
-- Cashier: `.order-card` (+ `--pending`) / `.order-*` / `.order-deliver`
-- Dashboard: `.summary-toolbar`, `.kpi-grid` / `.kpi` (+ `--accent`), `.context-grid` / `.ctx`,
-  `.chart-card` / `.chart-title` / `.chart-empty`, `.pbar-*` (top-products meter bars)
-- Kitchen: reuses `.panel` / `.order-card` for tickets, `.order-prepare` ("Tümünü Hazırla" button)
-- Stage warnings: `.alert-banner`, `.badge-pending` + `.dot-pending` (pulsing amber),
-  status tags `.status-tag--wait` (Hazırlanıyor, amber) / `--ready` (Servise hazır, sea) / `--ok` (Servis edildi, olive)
-
-**Charts (`CashierSummary.jsx`)** are hand-rolled inline SVG, single-hue by data job (sea for the
-revenue trend, olive for top-products), no chart library. Follow the `dataviz` skill: thin marks,
-rounded data-ends, direct value labels, recessive axes, `<title>` hover, `prefers-reduced-motion`
-respected.
-
-**The current look is settled — don't "modernize" it unprompted.** A 2026-07-17 redesign of the
-customer menu (Marcellus category headings, one surface per category, 40px tap targets, collapsible
-cart) was built, deployed, and **rejected**: the user preferred the existing layout. Tailwind was
-kept, the visual changes were reverted (`git revert 9c2f6b0`). Treat the present spacing/type/
-density as intentional. Restyling work needs an explicit request, and even then it should land in
-its own commit, separate from any infrastructure change.
-
-**Animation conventions:** cards enter with a staggered reveal — add `className="... reveal"` and
-`style={{ '--i': index }}`. Keyframes (`fade-in-up`, `pop-in`, `pulse`, `shake`, `spin`) live in
-`index.css`; a `@media (prefers-reduced-motion: reduce)` block disables them. Keep new motion in that
-same system.
-
-**Preserve logic when restyling.** The screens' data flow (`apiFetch`, `useState`, handlers) must stay
-intact — change presentation only. Never touch `src/api.js` for a styling change.
-
-Tailwind/postcss appear in `package.json` devDependencies but are **not wired up** — `className="flex gap-4"` does nothing. Design work happens on the **`dev` branch**; see `qr-menu-frontend/TASARIM.md`.
+**Layout and density are settled — don't "modernize" them unprompted.** A 2026-07-17 customer-menu
+redesign was built, deployed, and rejected; those visual changes were reverted. A 2026-08-06 pass
+(explicitly requested) applied Apple-style mechanics — springs, materials, type scale, 44px hit
+areas, dark mode — while keeping that layout and density intact. Restyling still needs an explicit
+request. Rationale and the do-not list: `qr-menu-frontend/CLAUDE.md`.
 
 ## Default credentials
 

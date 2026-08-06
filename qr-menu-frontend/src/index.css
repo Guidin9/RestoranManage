@@ -17,7 +17,13 @@
    Fontlar index.html'de <link> ile yükleniyor (@import zincirli istek olurdu).
    ========================================================================= */
 
-@import 'tailwindcss';
+/* source(none) + açık @source: Tailwind varsayılan olarak proje kökündeki her
+   dosyayı tarıyor ve CLAUDE.md gibi dokümanlarda geçen sınıf adlarından
+   (bg-paper, mt-5 ...) gerçek utility üretip bundle'ı şişiriyordu.
+   Yollar BU CSS DOSYASINA göre çözülür, proje köküne göre değil. */
+@import 'tailwindcss' source(none);
+@source '../index.html';
+@source './**/*.{js,jsx}';
 
 /* Tasarım token'ları — TEK KAYNAK. Bilerek katmansız: böylece Tailwind'in
    kendi @layer theme default'larını yener (rounded-md → 16px, ease-out →
@@ -44,7 +50,37 @@
   --mist: #f7f9f4;
   --line: rgba(18, 50, 64, 0.1);
   --line-strong: rgba(18, 50, 64, 0.16);
+  --line-hair: rgba(18, 50, 64, 0.08);
+  --line-soft: rgba(18, 50, 64, 0.06);
   --deep-grad: linear-gradient(160deg, #1a4759, #123240);
+  /* .btn-ink hover dolgusu. .btn-ink tersine çevrilmiş bir butondur
+     (zemin --ink, yazı --paper), yani bu değer karanlıkta --ink'ten DAHA
+     AÇIK olmalı — yoksa yazı okunmaz hâle gelir. */
+  --ink-lift: #1a4759;
+  --page-grad: linear-gradient(180deg, #d7e5e0 0%, #eef2e6 58%);
+  --placeholder: #d3ddd2;           /* fotoğrafsız ürün görseli zemini */
+
+  /* Aksan tint'leri — arka plan + ÜSTÜNDEKİ metin, semantik çift halinde.
+     Beyaz üstü %15 zeytin ile koyu zemin üstü %15 zeytin aynı renk değil;
+     metin rengi de karanlıkta ters yöne gitmek zorunda. Bu yüzden çift. */
+  --tint-olive: rgba(111, 138, 82, 0.15);
+  --tint-olive-ink: #5c7444;
+  --tint-sea: rgba(18, 104, 138, 0.13);
+  --tint-sea-ink: #0d4d68;
+  --tint-warn: rgba(211, 162, 86, 0.18);
+  --tint-warn-ink: #8a5e18;
+  --tint-terra: rgba(192, 95, 80, 0.1);
+  --tint-terra-ink: #a34537;
+
+  /* Materyaller (bkz. "Materyal ve derinlik") */
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-edge: rgba(255, 255, 255, 0.75);
+  --glass-top: rgba(255, 255, 255, 0.9);   /* materyale çarpan ışık, üst kenar */
+  --glass-deep: rgba(18, 50, 64, 0.92);
+  --scrim: rgba(18, 50, 64, 0.55);
+  /* Saydamlık kapalıyken cam yüzeylerin opak karşılığı. --ink KULLANILAMAZ:
+     karanlıkta --ink açık renge dönüyor, sepet çubuğu beyazlardı. */
+  --surface-deep: #16323f;
 
   /* Tailwind'in --radius-* namespace'iyle aynı isimler: rounded-lg/md/sm
      utility'leri bu değerlere çözülür. (Eskiden --radius idi; TW'nin
@@ -54,20 +90,134 @@
   --radius-md: 16px;
   --radius-sm: 11px;
 
-  --shadow-panel: 0 26px 60px -34px rgba(18, 50, 64, 0.5);
+  /* Derinlik ölçeği — dört basamak. Büyük yüzey daha kalın okunur:
+     head < card < panel < float. Eskiden dokuz ayrı bespoke gölge vardı. */
+  --shadow-head: 0 16px 30px -18px rgba(18, 50, 64, 0.6);
   --shadow-card: 0 12px 30px -22px rgba(18, 50, 64, 0.5);
+  --shadow-panel: 0 26px 60px -34px rgba(18, 50, 64, 0.5);
+  --shadow-float: 0 22px 44px -16px rgba(18, 50, 64, 0.85);
+  /* Karanlıkta iç üst parlaklığa dönüşür. Açıkta "none" YAZILAMAZ —
+     none bir box-shadow listesinin parçası olamaz, kural tümden düşer. */
+  --shadow-inset: inset 0 0 0 0 transparent;
 
   --sans: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --serif: 'Marcellus', 'Georgia', serif;
   --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  color-scheme: light;
+  /* Tracking boyuta özgüdür: büyük yazı küçülerek, küçük yazı açılarak
+     okunur. Tek bir letter-spacing değeri bir yerde mutlaka yanlıştır. */
+  --track-display: -0.022em;        /* ≥ 28px */
+  --track-title: -0.015em;          /* 20–27px */
+  --track-heading: -0.008em;        /* 15–19px */
+  --track-body: 0;                  /* 13–14px */
+  --track-small: 0.006em;           /* 11–12px */
+  --track-micro: 0.02em;            /* ≤ 10px, karışık harf */
+  --track-caps: 0.12em;             /* büyük harf mikro etiket */
+  --track-caps-wide: 0.28em;        /* .menu-eyebrow */
+
+  /* Leading boyutla ters orantılı */
+  --lead-flush: 1;
+  --lead-display: 1.05;
+  --lead-title: 1.12;
+  --lead-heading: 1.2;
+  --lead-dense: 1.3;
+  --lead-body: 1.5;
+
+  color-scheme: light dark;
   font-family: var(--sans);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Karanlık tema — SADECE dönen token'lar. Yine bilerek katmansız ve yukarıdaki
+   :root ile aynı specificity'de; kaynak sırasında sonra geldiği için koşul
+   tuttuğunda kazanır. !important yok, :root:root hilesi yok.
+
+   Kritik: @theme inline sayesinde Tailwind literal var() üretir
+   (.bg-paper { background-color: var(--paper) }), kopya değil. Yani burada
+   --paper'ı çevirmek hem her utility'yi hem @layer components'teki ~120
+   var(--paper) kuralını sıfır ek işle takip ettirir.
+
+   light-dark() daha kısa olurdu ama Chrome 123 / Safari 17.5 ister;
+   tabanımız iOS 16.4 / Chrome 111. Bu yüzden media query.
+
+   Koyu zemin üstündeki kabuk paleti (#eef4f2, #fff, #c3d6b0, #e8a99e ...)
+   zaten --deep-grad üzerinde yaşıyor ve iki temada da doğru — panel/login
+   başlıkları, .menu-head, .tab-total, modal başlığı ve sepet çubuğu için
+   burada renk işi YOK. Düzeltmeye çalışma. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #dce7eb;
+    --ink-dim: rgba(220, 231, 235, 0.62);
+    --ink-faint: rgba(220, 231, 235, 0.42);
+
+    --sea: #3f9dc2;
+    --sea-deep: #1a80a8;          /* artık yalnız hover dolgusu → daha AÇIK */
+    --olive: #7d9b5c;
+    --olive-deep: #8fae6b;        /* aynı şekilde hover dolgusu */
+    --olive-light: #a9c98e;
+    --terra: #d97f6e;
+    --warn: #e0b473;
+
+    --paper: #122a35;
+    --paper-soft: #0f242e;
+    --sand: #17323e;
+    --mist: #142d38;
+    --line: rgba(220, 231, 235, 0.13);
+    --line-strong: rgba(220, 231, 235, 0.22);
+    --line-hair: rgba(220, 231, 235, 0.1);
+    --line-soft: rgba(220, 231, 235, 0.08);
+    /* Kabuk kimliği kalır ama sayfadan DAHA AÇIK olmalı ki yükseltilmiş okunsun */
+    --deep-grad: linear-gradient(160deg, #1e5266, #143a4b);
+    --ink-lift: #f0f7f9;          /* --ink'ten açık: .btn-ink ters buton */
+    --page-grad: linear-gradient(180deg, #0c1f28 0%, #081a22 58%);
+    --placeholder: #1b3542;
+
+    --tint-olive: rgba(143, 179, 122, 0.18);
+    --tint-olive-ink: #a9c98e;
+    --tint-sea: rgba(63, 157, 194, 0.18);
+    --tint-sea-ink: #7fc2de;
+    --tint-warn: rgba(224, 180, 115, 0.2);
+    --tint-warn-ink: #e6c58c;
+    --tint-terra: rgba(217, 127, 110, 0.16);
+    --tint-terra-ink: #eda593;
+
+    --glass: rgba(255, 255, 255, 0.055);
+    --glass-edge: rgba(255, 255, 255, 0.1);
+    --glass-top: rgba(255, 255, 255, 0.16);
+    /* Sepet çubuğu karanlıkta sayfadan DAHA AÇIK olmalı — --deep-grad ile
+       aynı gerekçe. Sayfa zemininden koyu bir cam geriye kaçar, yüzen bir
+       katman gibi okunmaz ve altındaki yazılar camdan sızar. */
+    --glass-deep: rgba(30, 64, 80, 0.9);
+    --scrim: rgba(3, 10, 14, 0.7);
+    --surface-deep: #1c3f4f;
+
+    /* Neredeyse siyah sayfada mürekkep tonlu gölge görünmez: saf siyah,
+       yüksek alfa, sığ yayılım — ve kaybolan kontrast yerine iç üst parlaklık. */
+    --shadow-head: 0 16px 30px -16px rgba(0, 0, 0, 0.72);
+    --shadow-card: 0 12px 30px -18px rgba(0, 0, 0, 0.7);
+    --shadow-panel: 0 26px 60px -30px rgba(0, 0, 0, 0.8);
+    --shadow-float: 0 24px 48px -14px rgba(0, 0, 0, 0.85);
+    --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* Yüksek kontrast — tek blok iki temaya birden hizmet eder, çünkü hepsi
+   --ink üzerinden color-mix ile yazılı ve --ink yukarıda zaten döndü. */
+@media (prefers-contrast: more) {
+  :root {
+    --line: color-mix(in srgb, var(--ink) 34%, transparent);
+    --line-strong: color-mix(in srgb, var(--ink) 48%, transparent);
+    --line-hair: color-mix(in srgb, var(--ink) 28%, transparent);
+    --line-soft: color-mix(in srgb, var(--ink) 24%, transparent);
+    --ink-dim: color-mix(in srgb, var(--ink) 82%, transparent);
+    --ink-faint: color-mix(in srgb, var(--ink) 66%, transparent);
+    --glass: var(--paper);
+    --glass-deep: var(--ink);
+  }
 }
 
 /* Paleti kilitle: Tailwind'in 22 hazır renk rampasını (blue-500, red-400 ...)
@@ -108,6 +258,25 @@
   --color-mist: var(--mist);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  --color-line-hair: var(--line-hair);
+  --color-line-soft: var(--line-soft);
+  --color-ink-lift: var(--ink-lift);
+  --color-placeholder: var(--placeholder);
+
+  --color-tint-olive: var(--tint-olive);
+  --color-tint-olive-ink: var(--tint-olive-ink);
+  --color-tint-sea: var(--tint-sea);
+  --color-tint-sea-ink: var(--tint-sea-ink);
+  --color-tint-warn: var(--tint-warn);
+  --color-tint-warn-ink: var(--tint-warn-ink);
+  --color-tint-terra: var(--tint-terra);
+  --color-tint-terra-ink: var(--tint-terra-ink);
+
+  --color-glass: var(--glass);
+  --color-glass-edge: var(--glass-edge);
+  --color-glass-top: var(--glass-top);
+  --color-glass-deep: var(--glass-deep);
+  --color-scrim: var(--scrim);
 
   --font-sans: var(--sans);
   --font-serif: var(--serif);
@@ -122,7 +291,7 @@
   }
 
   body {
-    background: linear-gradient(180deg, #d7e5e0 0%, #eef2e6 58%) fixed;
+    background: var(--page-grad) fixed;
     overflow-x: hidden;
   }
 
@@ -130,16 +299,55 @@
     font-family: var(--serif);
     font-weight: 400;
     color: var(--ink);
-    line-height: 1.12;
+    line-height: var(--lead-title);
+    letter-spacing: var(--track-title);
     margin: 0;
   }
-  p { margin: 0; line-height: 1.5; }
+  p { margin: 0; line-height: var(--lead-body); }
   a { color: var(--sea); text-decoration: none; }
-  a:hover { color: var(--sea-deep); }
   svg { display: block; }
+
+  /* Dokunma cevabı. touch-action: manipulation, iOS'un çift dokunma
+     bekleyip beklettiği ~300ms tap gecikmesini öldürür — gecikme
+     görüldüğü an doğrudanlık hissi uçurumdan düşer. */
+  button, a, [role='button'], input, select, label {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
 }
 
 @layer components {
+
+/* =========================================================================
+   Tipografi ölçeği — boyuta özgü tracking
+
+   Bilerek katmanın EN BAŞINDA. Kendi letter-spacing'ini zaten yazan sekiz
+   sınıf (.label, .menu-eyebrow, .menu-arch-label, .tab-total-label,
+   .status-tag, .table-status, .badge-pending, .kpi-label) aynı
+   specificity'de ve daha sonra geldiği için otomatik kazanır — ki doğrusu
+   da o, hepsi büyük-harf caps tracking'i. Böylece ~90 font kısayolunu tek
+   tek düzenlemek yerine altı kural yetiyor.
+   ========================================================================= */
+
+.menu-brand, .kpi-value                                     { letter-spacing: var(--track-display); }
+.panel-title, .modal-title, .confirm-title, .table-name,
+.order-table, .empty h3, .tab-total-value, .login-head h2   { letter-spacing: var(--track-title); }
+.prod-name, .prod-price, .cat-name, .ctx-title,
+.item-name, .item-price, .order-total-value, .cart-total    { letter-spacing: var(--track-heading); }
+.line-name, .staff-name, .input, .select, .tab              { letter-spacing: var(--track-body); }
+.cart-name, .cart-price, .add-chip-price, .order-time,
+.pbar-sub, .staff-user, .table-meta                         { letter-spacing: var(--track-small); }
+.cart-count, .status-tag, .badge-pending                    { letter-spacing: var(--track-micro); }
+
+/* Sabit genişlikli rakam — adet değişince fiyatlar yatay zıplamasın */
+.prod-price, .cart-total, .cart-price, .cart-qty, .qty-num, .line-price, .line-qty,
+.order-line-price, .order-total-value, .tab-item-price, .tab-item-qty, .tab-total-value,
+.kpi-value, .pbar-value, .item-price, .total-row, .pending-line-price, .pending-cart-total,
+.order-time, .cart-meta { font-variant-numeric: tabular-nums; }
+
+/* Uzun başlık/açıklama satır kırma — tabanın üstünde, sessizce normal'a düşer */
+.confirm-title, .empty h3, .chart-empty { text-wrap: balance; }
+.confirm-sub, .empty p, .login-sub, .hint-box { text-wrap: pretty; }
 
 .muted { color: var(--ink-dim); }
 
@@ -174,10 +382,10 @@
 
 .panel {
   background: var(--paper);
-  border: 1px solid rgba(18, 50, 64, 0.06);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-panel);
+  box-shadow: var(--shadow-inset), var(--shadow-panel);
 }
 
 .panel-head {
@@ -228,6 +436,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 44px;
   padding: 11px 16px;
   font: 600 13px/1 var(--sans);
   color: var(--ink);
@@ -240,39 +449,31 @@
   transition: transform 0.18s var(--ease-out), background 0.2s ease,
               color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.btn:hover { transform: translateY(-1px); border-color: var(--ink-faint); }
-.btn:active { transform: translateY(0) scale(0.98); }
 .btn:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
 
 .btn-primary {
   background: var(--sea); color: #fff; border-color: transparent;
   box-shadow: 0 10px 20px -8px rgba(18, 104, 138, 0.6);
 }
-.btn-primary:hover { background: var(--sea-deep); border-color: transparent; }
-
 .btn-success {
   background: var(--olive); color: #fff; border-color: transparent;
   box-shadow: 0 10px 20px -8px rgba(111, 138, 82, 0.8);
 }
-.btn-success:hover { background: var(--olive-deep); border-color: transparent; }
 
 /* Tasarımda silme eylemleri terakota konturlu, hover'da dolar */
 .btn-danger {
   background: transparent; color: var(--terra);
   border-color: rgba(192, 95, 80, 0.4);
 }
-.btn-danger:hover { background: var(--terra); color: #fff; border-color: transparent; }
 
-.btn-ink { background: var(--ink); color: #fff; border-color: transparent; }
-.btn-ink:hover { background: #1a4759; border-color: transparent; }
+.btn-ink { background: var(--ink); color: var(--paper); border-color: transparent; }
 
-/* Koyu panel başlığındaki çıkış butonu */
+/* Koyu panel başlığındaki çıkış butonu — her iki temada da --deep-grad üstünde */
 .btn-logout {
   background: rgba(192, 95, 80, 0.18);
   border-color: rgba(192, 95, 80, 0.4);
   color: #e8a99e;
 }
-.btn-logout:hover { background: rgba(192, 95, 80, 0.32); border-color: rgba(192, 95, 80, 0.55); }
 
 /* Yalnızca metin görünümlü silme butonu (satır içi) */
 .btn-text-danger {
@@ -281,14 +482,23 @@
   color: var(--terra);
   font: 600 12px/1 var(--sans);
   cursor: pointer;
+  min-height: 44px;
   padding: 8px 10px;
   border-radius: 8px;
   transition: background 0.2s ease;
 }
-.btn-text-danger:hover { background: rgba(192, 95, 80, 0.1); }
 
 .btn-block { width: 100%; }
-.btn-sm { padding: 8px 12px; font-size: 12px; }
+
+/* Satır içi küçük buton: görsel kutu 34px kalır, dokunma alanı
+   pseudo-element ile 44px'e çıkar — yoğunluk değişmeden ergonomi. */
+.btn-sm {
+  position: relative;
+  min-height: 34px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.btn-sm::after { content: ''; position: absolute; inset: -5px -2px; }
 
 /* =========================================================================
    Form alanları
@@ -299,7 +509,7 @@
   display: block;
   margin-bottom: 7px;
   font: 600 11px/1 var(--sans);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-dim);
 }
@@ -318,7 +528,7 @@
 .input::placeholder { color: var(--ink-faint); }
 .input:focus, .select:focus {
   border-color: var(--sea);
-  box-shadow: 0 0 0 3px rgba(18, 104, 138, 0.14);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sea) 22%, transparent);
 }
 .select option { color: var(--ink); }
 input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; color: var(--ink-dim); }
@@ -330,13 +540,13 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   flex-wrap: wrap;
   align-items: flex-end;
   background: var(--mist);
-  border: 1px solid rgba(18, 50, 64, 0.08);
+  border: 1px solid var(--line-hair);
   border-radius: var(--radius-md);
   padding: 16px;
   margin-bottom: 20px;
 }
 .form-box .field { flex: 1 1 150px; margin: 0; }
-.form-box .btn { height: 42px; }
+.form-box .btn { height: 44px; }
 
 /* =========================================================================
    Giriş ekranları
@@ -353,10 +563,10 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   width: 100%;
   max-width: 420px;
   background: var(--paper);
-  border: 1px solid rgba(18, 50, 64, 0.06);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 30px 70px -36px rgba(18, 50, 64, 0.55);
+  box-shadow: var(--shadow-inset), var(--shadow-panel);
   animation: pop-in 0.55s var(--ease-out) both;
 }
 .login-head {
@@ -387,9 +597,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   font: 500 13px/1.4 var(--sans);
   text-align: center;
   margin-bottom: 16px;
-  color: #a34537;
-  background: rgba(192, 95, 80, 0.08);
-  border: 1px solid rgba(192, 95, 80, 0.3);
+  color: var(--tint-terra-ink);
+  background: var(--tint-terra);
+  border: 1px solid color-mix(in srgb, var(--terra) 34%, transparent);
   animation: shake 0.4s ease;
 }
 
@@ -407,6 +617,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .tab {
   border: none;
   background: transparent;
+  min-height: 44px;
   padding: 10px 4px 14px;
   font: 500 14px/1 var(--sans);
   color: var(--ink-dim);
@@ -415,7 +626,6 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
-.tab:hover { color: var(--ink); }
 .tab.active { color: var(--ink); font-weight: 700; border-bottom-color: var(--sea); }
 
 /* =========================================================================
@@ -438,20 +648,24 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    Müşteri menüsü
    ========================================================================= */
 
+/* viewport-fit=cover ile birlikte: yanlar çentik/kavisten kaçar, alt
+   home indicator'ı geçer. Yerleşim ve yoğunluk aynı kalır. */
 .menu-page {
   max-width: 560px;
   margin: 0 auto;
-  padding: 0 16px 40px;
+  padding: 0 max(16px, env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom))
+              max(16px, env(safe-area-inset-left));
   animation: fade-in 0.5s var(--ease-out) both;
 }
 
 .menu-head {
-  margin: 0 -16px 20px;
-  padding: 34px 22px 20px;
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 20px
+             calc(-1 * max(16px, env(safe-area-inset-left)));
+  padding: calc(34px + env(safe-area-inset-top)) 22px 20px;
   background: var(--deep-grad);
   color: #eef4f2;
   border-radius: 0 0 26px 26px;
-  box-shadow: 0 16px 30px -18px rgba(18, 50, 64, 0.6);
+  box-shadow: var(--shadow-head);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -459,7 +673,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .menu-eyebrow {
   font: 400 9px/1 var(--sans);
-  letter-spacing: 0.3em;
+  letter-spacing: var(--track-caps-wide);
   text-transform: uppercase;
   color: rgba(238, 244, 242, 0.55);
 }
@@ -477,10 +691,20 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .menu-arch-label {
   font: 600 8px/1 var(--sans);
-  letter-spacing: 0.15em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: rgba(238, 244, 242, 0.6);
   margin-top: 5px;
+}
+
+/* Yükleme iskeleti — "Yükleniyor..." metni kemeri deforme ediyordu */
+.skel {
+  display: inline-block;
+  min-width: 30px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(238, 244, 242, 0.28);
+  animation: ml-pulse 1.4s ease-in-out infinite;
 }
 
 /* Masa hesabı paneli — toplam + sipariş edilen ürünler (teslim durumuyla) */
@@ -488,7 +712,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   margin: 4px 0 10px;
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 12px 26px -18px rgba(18, 50, 64, 0.6);
+  box-shadow: var(--shadow-card);
   border: 1px solid var(--line);
 }
 .tab-total {
@@ -502,7 +726,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .tab-total-label {
   font: 600 11px/1 var(--sans);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: rgba(238, 244, 242, 0.6);
 }
@@ -524,28 +748,32 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 /* Teslim durumu etiketi */
 .status-tag {
   font: 700 9.5px/1 var(--sans);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-micro);
   padding: 4px 8px;
   border-radius: 999px;
   white-space: nowrap;
 }
-.status-tag--ok { background: rgba(111, 138, 82, 0.15); color: var(--olive-deep); }
-.status-tag--wait { background: rgba(211, 162, 86, 0.18); color: #9a6a1e; }
-.status-tag--ready { background: rgba(18, 104, 138, 0.13); color: var(--sea-deep); }
+.status-tag--ok { background: var(--tint-olive); color: var(--tint-olive-ink); }
+.status-tag--wait { background: var(--tint-warn); color: var(--tint-warn-ink); }
+.status-tag--ready { background: var(--tint-sea); color: var(--tint-sea-ink); }
 
 .cat-title { font: 700 13px/1 var(--sans); color: var(--ink); margin: 18px 4px 12px; }
 
+/* Sayfa gradient'inin üstünde açık materyal. Başka bir yarı saydam yüzeyle
+   asla üst üste gelmiyor — "açığın üstüne açık koyma" kuralı sağlam.
+   Üst kenar bir tık parlak: materyale çarpan ışık. */
 .prod-card {
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--glass);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
   border-radius: 20px;
   padding: 12px;
   margin-bottom: 12px;
   display: flex;
   gap: 13px;
-  box-shadow: 0 12px 26px -18px rgba(18, 50, 64, 0.4);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
 }
 .prod-thumb {
   width: 76px; height: 76px;
@@ -555,15 +783,15 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .prod-thumb--empty,
 .thumb-sm--empty {
-  background-color: #d3ddd2;
-  background-image: repeating-linear-gradient(45deg, rgba(18, 50, 64, 0.06) 0 7px, transparent 7px 14px);
+  background-color: var(--placeholder);
+  background-image: repeating-linear-gradient(45deg, var(--line-soft) 0 7px, transparent 7px 14px);
   display: flex; align-items: center; justify-content: center;
 }
 .prod-thumb--empty span,
 .thumb-sm--empty span {
   font: 500 8.5px ui-monospace, Menlo, monospace;
   color: var(--ink-faint);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-micro);
 }
 .prod-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .prod-name { font: 700 15px/1.15 var(--sans); color: var(--ink); }
@@ -575,15 +803,18 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .prod-price { font: 700 15px/1 var(--sans); color: var(--ink); }
 
-/* Adet sayacı */
+/* Adet sayacı — görsel kutu 26px kalıyor (yoğunluk kasıtlı), dokunma alanı
+   pseudo-element ile 44x36'ya çıkıyor. gap 3 → 10 ZORUNLU ön koşul:
+   3px boşlukta -5px yan insetler 7px çakışır ve yanlış buton tetiklenir. */
 .stepper {
-  display: inline-flex; align-items: center; gap: 3px;
+  display: inline-flex; align-items: center; gap: 10px;
   background: var(--paper);
-  border: 1px solid rgba(18, 50, 64, 0.14);
+  border: 1px solid var(--line-strong);
   border-radius: 10px;
   padding: 3px;
 }
 .qty-btn {
+  position: relative;
   width: 26px; height: 26px;
   border-radius: 8px;
   border: none;
@@ -591,28 +822,57 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   color: var(--ink);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s var(--ease-out);
 }
-.qty-btn:hover { background: var(--sand); }
+.qty-btn::after { content: ''; position: absolute; inset: -9px -5px; }
 .qty-btn--inc { background: var(--olive); color: #fff; }
-.qty-btn--inc:hover { background: var(--olive-deep); }
 .qty-num { font: 700 13px/1 var(--sans); color: var(--ink); min-width: 16px; text-align: center; }
 
-/* Sepet barı — koyu, buzlu, alta yapışık */
+/* Sepet — koyu ağır materyal, açık içeriğin üstünde. Yapısal olarak doğru:
+   koyu/ağır materyal bölgeleri ayırır, açık materyal etkileşimi öne çıkarır.
+
+   VARSAYILAN HÂLİ TAM AÇIK. Gizli bir "peek" değildir; sürükleme jesti
+   sadece ek bir yetenektir (2026-07-17 emsali — bkz. CLAUDE.md).
+
+   Giriş/çıkış animasyonu .cart-sheet'te (Motion), sürükleme burada:
+   iki transform aynı elemanı paylaşamaz. Bu yüzden slide-up keyframe'i
+   buradan kaldırıldı. */
+.cart-sheet { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom)); margin-top: 24px; }
 .cart-bar {
-  position: sticky;
-  bottom: 14px;
-  margin-top: 24px;
-  background: rgba(18, 50, 64, 0.92);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: var(--glass-deep);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.18);
   border-radius: 20px;
   padding: 14px;
-  box-shadow: 0 22px 44px -16px rgba(18, 50, 64, 0.85);
+  box-shadow: var(--shadow-float);
   color: #eef4f2;
-  animation: slide-up 0.5s var(--ease-out) both;
 }
+
+/* Sürükleme tutamacı — touch-action:none olan TEK eleman; listenin kendisi
+   normal kaydırmayı korur. Aynı zamanda <button>, yani jest kullanamayan
+   klavye/AT kullanıcısı da snap'ler arasında dönebiliyor. */
+.sheet-grip {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 2px 0 9px;
+  cursor: grab;
+  touch-action: none;
+  transition: transform 0.15s var(--ease-out);
+}
+.sheet-grip:active { cursor: grabbing; }
+.sheet-grip::before {
+  content: '';
+  display: block;
+  width: 36px; height: 4px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.32);
+}
+.sheet-grip:focus-visible { outline: 2px solid var(--olive-light); outline-offset: 2px; border-radius: 8px; }
 .cart-top { display: flex; align-items: center; gap: 11px; margin-bottom: 11px; }
 .cart-bag { position: relative; color: #fff; flex: none; }
 .cart-count {
@@ -626,9 +886,31 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .cart-title { flex: 1; font: 600 13px/1 var(--sans); color: #fff; }
 .cart-meta { font: 400 11px/1 var(--sans); color: rgba(255, 255, 255, 0.7); }
+/* Yükseklik Motion'ın sürdüğü bir MotionValue — max-height buradan kalktı.
+   contain: reflow'u sepet alt ağacına hapseder (height animasyonu layout
+   işi yapar; elastik kısım transform'da, o bedava).
+   Sert kesme yerine kenar solması: içerik yüzen kabuğun altına girerken
+   1px çizgi değil, kısa bir gradient mask. */
 .cart-lines {
-  list-style: none; padding: 0; margin: 0 0 11px;
-  max-height: 104px; overflow: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  contain: layout paint;
+  /* Kaydırma çubuğu GİZLİ olmak zorunda. Görünür çubuk, liste kısalıp
+     içerik taşınca beliriyor, içerik genişliğini ~10px daraltıyor, ürün adı
+     sarıyor, doğal yükseklik değişiyor, ResizeObserver yeniden ölçüyor ve
+     çubuk yine kayboluyor: sayfayı donduran bir geri besleme döngüsü.
+     Zaten devamı olduğunu kenar solması söylüyor. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%);
+}
+/* Listenin GERÇEK boyu buradan ölçülür. Dıştaki kutudan ölçülemez:
+   scrollHeight, kutunun kendi yüksekliğinin altına inemez — 40px'lik
+   içerik 104px'lik bir kutuda 104 raporlar ve liste hiç daralmaz. */
+.cart-lines::-webkit-scrollbar { width: 0; height: 0; }
+.cart-lines-inner {
+  list-style: none; padding: 0; margin: 0;
   display: flex; flex-direction: column; gap: 7px;
 }
 .cart-line { display: flex; align-items: center; gap: 8px; }
@@ -640,8 +922,10 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .cart-price { font: 600 12px/1 var(--sans); color: #fff; }
+/* Bu border kalır: iki eş düzlemli bölgeyi ayırıyor, bir scroll kenarı değil */
 .cart-foot {
   display: flex; align-items: center; gap: 11px;
+  margin-top: 11px;
   padding-top: 11px;
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
@@ -649,14 +933,15 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .cart-total { font: 700 18px/1.1 var(--sans); color: #fff; margin-top: 3px; }
 
 /* Sipariş alındı katmanı */
+/* Odaklanmak için karart. Giriş/çıkış artık Motion'da (AnimatePresence) —
+   eskiden çıkış animasyonu hiç yoktu, katman anında yok oluyordu. */
 .confirm-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(18, 50, 64, 0.55);
+  background: var(--scrim);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   padding: 26px;
-  animation: fade-in 0.3s ease both;
 }
 .confirm-card {
   width: 100%; max-width: 360px;
@@ -664,8 +949,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 24px;
   padding: 30px 26px;
   text-align: center;
-  box-shadow: 0 30px 60px -20px rgba(18, 50, 64, 0.6);
-  animation: pop-in 0.4s var(--ease-spring) both;
+  box-shadow: var(--shadow-inset), var(--shadow-float);
 }
 .confirm-icon {
   width: 64px; height: 64px;
@@ -690,25 +974,25 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: var(--radius-md);
   padding: 16px;
   cursor: pointer;
-  box-shadow: 0 8px 20px -16px rgba(18, 50, 64, 0.5);
+  box-shadow: var(--shadow-card);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.table-card:hover { transform: translateY(-3px); box-shadow: 0 16px 28px -18px rgba(18, 50, 64, 0.55); }
-.table-card--free { background: #f4f8f1; border-color: rgba(111, 138, 82, 0.28); }
-.table-card--busy { background: #fbf3f1; border-color: rgba(192, 95, 80, 0.25); }
+/* color-mix ile: sıfır yeni token, karanlık modu bedava takip eder */
+.table-card--free { background: color-mix(in srgb, var(--olive) 7%, var(--paper)); border-color: color-mix(in srgb, var(--olive) 28%, transparent); }
+.table-card--busy { background: color-mix(in srgb, var(--terra) 6%, var(--paper)); border-color: color-mix(in srgb, var(--terra) 25%, transparent); }
 
 .table-name { font: 400 20px/1 var(--serif); color: var(--ink); }
 .table-status {
   font: 700 9px/1 var(--sans);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-caps);
   padding: 5px 9px;
   border-radius: 999px;
 }
-.table-status--free { background: rgba(111, 138, 82, 0.18); color: var(--olive-deep); }
-.table-status--busy { background: rgba(192, 95, 80, 0.15); color: var(--terra); }
+.table-status--free { background: var(--tint-olive); color: var(--tint-olive-ink); }
+.table-status--busy { background: var(--tint-terra); color: var(--tint-terra-ink); }
 .table-meta { font: 500 12px/1.4 var(--sans); margin-top: 14px; }
 .table-card--free .table-meta { color: var(--ink-faint); }
-.table-card--busy .table-meta { color: rgba(18, 50, 64, 0.7); }
+.table-card--busy .table-meta { color: var(--ink-dim); }
 
 /* =========================================================================
    Teslim uyarıları — banner, bekleyen rozeti, kart vurgusu
@@ -721,9 +1005,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   margin-bottom: 18px;
   padding: 12px 16px;
   border-radius: var(--radius-md);
-  background: rgba(211, 162, 86, 0.13);
-  border: 1px solid rgba(211, 162, 86, 0.4);
-  color: #8a5e18;
+  background: var(--tint-warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  color: var(--tint-warn-ink);
   font: 500 13px/1.3 var(--sans);
 }
 .alert-banner svg { color: var(--warn); flex: none; }
@@ -736,10 +1020,10 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(211, 162, 86, 0.18);
-  color: #8a5e18;
+  background: var(--tint-warn);
+  color: var(--tint-warn-ink);
   font: 700 9.5px/1 var(--sans);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--track-micro);
   white-space: nowrap;
 }
 .dot-pending {
@@ -749,9 +1033,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 
 /* Bekleyen kalem/kart vurgusu */
-.table-card--pending { border-color: rgba(211, 162, 86, 0.6); box-shadow: 0 0 0 2px rgba(211, 162, 86, 0.18); }
-.order-card--pending { border-color: rgba(211, 162, 86, 0.55); box-shadow: 0 0 0 2px rgba(211, 162, 86, 0.16), var(--shadow-card); }
-.line-row--pending { border-color: rgba(211, 162, 86, 0.4); background: rgba(211, 162, 86, 0.08); }
+.table-card--pending { border-color: color-mix(in srgb, var(--warn) 60%, transparent); box-shadow: 0 0 0 2px var(--tint-warn); }
+.order-card--pending { border-color: color-mix(in srgb, var(--warn) 55%, transparent); box-shadow: 0 0 0 2px var(--tint-warn), var(--shadow-card); }
+.line-row--pending { border-color: color-mix(in srgb, var(--warn) 40%, transparent); background: var(--tint-warn); }
 
 /* Kasa kartında "Teslim Edildi" butonu (ödeme butonunun üstünde) */
 .order-deliver {
@@ -765,7 +1049,6 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   cursor: pointer;
   transition: background 0.2s ease;
 }
-.order-deliver:hover { background: var(--olive-deep); }
 
 /* Mutfak fişinde "Tümünü Hazırla" butonu */
 .order-prepare {
@@ -780,7 +1063,6 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 0 0 18px 18px;
   transition: background 0.2s ease;
 }
-.order-prepare:hover { background: var(--sea-deep); }
 
 /* =========================================================================
    Modal
@@ -788,12 +1070,11 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 
 .modal-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(18, 50, 64, 0.55);
+  background: var(--scrim);
   -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
-  animation: fade-in 0.3s ease both;
 }
 .modal {
   width: 100%;
@@ -802,8 +1083,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   overflow: auto;
   background: var(--paper);
   border-radius: var(--radius-lg);
-  box-shadow: 0 40px 90px -30px rgba(18, 50, 64, 0.7);
-  animation: pop-in 0.4s var(--ease-out) both;
+  box-shadow: var(--shadow-inset), var(--shadow-panel);
 }
 .modal--dialog { max-width: 400px; padding: 28px; text-align: center; }
 .modal-head {
@@ -816,6 +1096,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .modal-title { font: 400 22px/1 var(--serif); }
 .modal-close {
+  position: relative;
   width: 34px; height: 34px;
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.12);
@@ -826,7 +1107,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   flex: none;
   transition: transform 0.2s var(--ease-out), background 0.2s ease;
 }
-.modal-close:hover { transform: rotate(90deg); background: var(--terra); }
+.modal-close::after { content: ''; position: absolute; inset: -5px; }
 .modal-body { padding: 22px; }
 
 .section-title {
@@ -843,7 +1124,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .line-row {
   display: flex; align-items: center; gap: 11px;
   background: var(--mist);
-  border: 1px solid rgba(18, 50, 64, 0.08);
+  border: 1px solid var(--line-hair);
   border-radius: 12px;
   padding: 10px 13px;
 }
@@ -860,7 +1141,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 /* Boş adisyon ipucu kutusu */
 .hint-box {
   background: var(--mist);
-  border: 1px dashed rgba(18, 50, 64, 0.15);
+  border: 1px dashed var(--line-strong);
   border-radius: 14px;
   padding: 22px;
   text-align: center;
@@ -889,14 +1170,14 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   padding: 16px;
   border-radius: var(--radius-md);
   background: var(--mist);
-  border: 1px solid rgba(111, 138, 82, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid color-mix(in srgb, var(--olive) 35%, transparent);
+  box-shadow: var(--shadow-inset);
 }
 .pending-cart-head { display: flex; align-items: center; gap: 11px; }
 .pending-cart-head .cart-bag { color: var(--olive); }
 .pending-cart-head .cart-count { background: var(--olive); }
 .pending-cart-title { flex: 1; font: 700 13px/1 var(--sans); color: var(--ink); }
-.pending-cart-total { font: 700 15px/1 var(--sans); color: var(--olive-deep); }
+.pending-cart-total { font: 700 15px/1 var(--sans); color: var(--tint-olive-ink); }
 .pending-line {
   display: flex; align-items: center; gap: 11px;
   background: var(--paper);
@@ -917,13 +1198,13 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 18px;
   overflow: hidden;
   background: var(--paper-soft);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
 }
 .order-head {
   padding: 15px 17px;
   display: flex; align-items: center; justify-content: space-between;
   background: var(--sand);
-  border-bottom: 1px solid rgba(18, 50, 64, 0.08);
+  border-bottom: 1px solid var(--line-hair);
 }
 .order-table { font: 400 20px/1 var(--serif); color: var(--ink); }
 .order-time { font: 500 11px/1 var(--sans); color: var(--ink-dim); }
@@ -939,7 +1220,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .order-line-price { font: 600 13px/1 var(--sans); color: var(--ink); }
 .order-total {
   padding: 14px 17px;
-  border-top: 1px solid rgba(18, 50, 64, 0.08);
+  border-top: 1px solid var(--line-hair);
   display: flex; align-items: center; justify-content: space-between;
 }
 .order-total-label { font: 500 12px/1 var(--sans); color: var(--ink-dim); }
@@ -955,7 +1236,6 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   cursor: pointer;
   transition: background 0.2s ease;
 }
-.order-pay:hover { background: var(--sea-deep); }
 
 /* =========================================================================
    Kasa — gün özeti dashboard'u
@@ -980,7 +1260,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: var(--radius-md);
   background: var(--paper-soft);
   border: 1px solid var(--line);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -988,7 +1268,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .kpi--accent { background: var(--deep-grad); border-color: transparent; }
 .kpi-label {
   font: 600 11px/1 var(--sans);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-dim);
 }
@@ -1030,7 +1310,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: var(--radius-md);
   background: var(--paper);
   border: 1px solid var(--line);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
   margin-bottom: 16px;
 }
 .chart-title {
@@ -1104,7 +1384,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .qr-box {
   display: flex; gap: 12px; align-items: center;
   background: var(--sand);
-  border: 1px dashed rgba(18, 50, 64, 0.18);
+  border: 1px dashed var(--line-strong);
   border-radius: 12px;
   padding: 11px;
 }
@@ -1112,10 +1392,13 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   width: 52px; height: 52px;
   border-radius: 8px;
   flex: none;
+  /* Onaylı sabit renk (ikincisi): QR'ın taranabilmesi için beyaz sessiz
+     alan şart — bu iki temada da beyaz kalır, token'a bağlanmaz. */
   background: #fff;
   border: 1px solid var(--line);
 }
-.link { display: inline-flex; align-items: center; gap: 5px; font: 600 12px/1 var(--sans); }
+.link { position: relative; display: inline-flex; align-items: center; gap: 5px; font: 600 12px/1 var(--sans); }
+.link::after { content: ''; position: absolute; inset: -12px -4px; }
 
 .cat-card {
   border: 1px solid var(--line);
@@ -1126,7 +1409,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   display: flex; align-items: center; justify-content: space-between;
   padding: 13px 17px;
   background: var(--sand);
-  border-bottom: 1px solid rgba(18, 50, 64, 0.08);
+  border-bottom: 1px solid var(--line-hair);
   gap: 10px;
 }
 .cat-name { font: 400 18px/1 var(--serif); color: var(--ink); }
@@ -1135,7 +1418,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .item-row {
   display: flex; align-items: center; gap: 13px;
   padding: 10px 5px;
-  border-bottom: 1px solid rgba(18, 50, 64, 0.06);
+  border-bottom: 1px solid var(--line-soft);
 }
 .item-row:last-child { border-bottom: none; }
 .thumb-sm {
@@ -1154,6 +1437,136 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto;
+}
+
+/* =========================================================================
+   Toast — window.alert() yerine
+
+   Dört tür: status / ok / warn / error. Hepsi tint çiftlerini kullanıyor,
+   yani karanlık modu bedava takip ediyor.
+   ========================================================================= */
+
+.toast-stack {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 0; right: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-inset), var(--shadow-float);
+  font: 500 13px/1.35 var(--sans);
+  color: var(--ink);
+  touch-action: none;
+  cursor: grab;
+}
+.toast:active { cursor: grabbing; }
+.toast-dot { width: 8px; height: 8px; border-radius: 999px; flex: none; }
+.toast-text { flex: 1; min-width: 0; }
+.toast--status { background: var(--tint-sea); border-color: color-mix(in srgb, var(--sea) 32%, transparent); color: var(--tint-sea-ink); }
+.toast--status .toast-dot { background: var(--sea); }
+.toast--ok { background: var(--tint-olive); border-color: color-mix(in srgb, var(--olive) 32%, transparent); color: var(--tint-olive-ink); }
+.toast--ok .toast-dot { background: var(--olive); }
+.toast--warn { background: var(--tint-warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); color: var(--tint-warn-ink); }
+.toast--warn .toast-dot { background: var(--warn); }
+.toast--error { background: var(--tint-terra); border-color: color-mix(in srgb, var(--terra) 36%, transparent); color: var(--tint-terra-ink); }
+.toast--error .toast-dot { background: var(--terra); }
+
+/* =========================================================================
+   Hover — yalnızca gerçek imleçte
+
+   Tüm :hover kuralları buraya, GÖRELİ SIRALARI KORUNARAK taşındı. Sıra
+   önemli: .qty-btn:hover ile .qty-btn--inc:hover aynı specificity'de,
+   ikincisi sadece sonra geldiği için kazanıyor; .btn:hover ile
+   .btn-primary:hover de öyle. Masaüstü davranışı böylece birebir aynı
+   kalırken dokunmatikte "takılı hover" ortadan kalkıyor.
+   ========================================================================= */
+
+@media (hover: hover) and (pointer: fine) {
+  a:hover { color: var(--sea-deep); }
+  .btn:hover { transform: translateY(-1px); border-color: var(--ink-faint); }
+  .btn-primary:hover { background: var(--sea-deep); border-color: transparent; }
+  .btn-success:hover { background: var(--olive-deep); border-color: transparent; }
+  .btn-danger:hover { background: var(--terra); color: #fff; border-color: transparent; }
+  .btn-ink:hover { background: var(--ink-lift); border-color: transparent; }
+  .btn-logout:hover { background: rgba(192, 95, 80, 0.32); border-color: rgba(192, 95, 80, 0.55); }
+  .btn-text-danger:hover { background: var(--tint-terra); }
+  .tab:hover { color: var(--ink); }
+  .qty-btn:hover { background: var(--sand); }
+  .qty-btn--inc:hover { background: var(--olive-deep); }
+  .table-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); }
+  .order-deliver:hover { background: var(--olive-deep); }
+  .order-prepare:hover { background: var(--sea-deep); }
+  .modal-close:hover { transform: rotate(90deg); background: var(--terra); }
+  .order-pay:hover { background: var(--sea-deep); }
+}
+
+/* =========================================================================
+   Basma geri bildirimi — pointer-DOWN'da, bırakışta değil
+
+   CSS :active tam bunu yapar: parmak değdiği an tetiklenir, kalkınca biter,
+   sürükleyip uzaklaşınca doğal olarak iptal olur. JS'e, whileTap'e veya
+   eleman eleman kabloya gerek yok — beş ekranda birden çalışır.
+
+   Hover bloğundan SONRA gelmeli: aynı specificity'de olduğu için, masaüstünde
+   hem hover hem active durumdaki bir butonun basma tepkisi kaybolmasın.
+   ========================================================================= */
+
+.btn:active, .qty-btn:active, .tab:active, .order-pay:active, .order-deliver:active,
+.order-prepare:active, .table-card:active, .btn-text-danger:active {
+  transform: scale(0.97);
+  transition-duration: 90ms;
+}
+.modal-close:active { transform: rotate(90deg) scale(0.94); transition-duration: 90ms; }
+
+/* =========================================================================
+   Erişilebilirlik tercihleri (renk token'ları :root'ta, yüzeyler burada)
+   ========================================================================= */
+
+@media (prefers-contrast: more) {
+  .prod-card, .panel, .order-card, .kpi, .chart-card,
+  .add-chip, .staff-row, .line-row, .table-card {
+    border-width: 1.5px;
+    border-color: var(--line-strong);
+  }
+  .btn { border-color: var(--ink-faint); }
+  .btn:focus-visible { outline-width: 3px; }
+  .status-tag, .badge-pending, .table-status { outline: 1px solid currentColor; outline-offset: -1px; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .prod-card {
+    background: var(--paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--line);
+  }
+  .cart-bar {
+    background: var(--surface-deep);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .modal-overlay, .confirm-overlay {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: color-mix(in srgb, var(--surface-deep) 92%, transparent);
+  }
+  .cart-lines { -webkit-mask-image: none; mask-image: none; }
 }
 
 } /* ← @layer components sonu */

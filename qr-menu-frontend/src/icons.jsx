@@ -2,7 +2,12 @@
 // Yalnızca görünüm — renk currentColor üzerinden geldiği için bulunduğu
 // öğenin metin rengini alır.
 
-const Svg = ({ size = 16, sw = 1.8, children }) => (
+// Boyut ölçeği için bkz. ./iconScale.js (bu dosya yalnızca bileşen export eder).
+//
+// ...rest ŞART: bu olmadan bir ikona verilen className / aria-* sessizce
+// düşer. Hepsi dekoratif ve her çağrı yerinde bir metinle eşli olduğu için
+// varsayılan aria-hidden — gerekirse çağrı yerinden ezilebilir.
+const Svg = ({ size = 16, sw = 1.8, children, ...rest }) => (
     <svg
         width={size}
         height={size}
@@ -12,6 +17,9 @@ const Svg = ({ size = 16, sw = 1.8, children }) => (
         strokeWidth={sw}
         strokeLinecap="round"
         strokeLinejoin="round"
+        aria-hidden="true"
+        focusable="false"
+        {...rest}
     >
         {children}
     </svg>
@@ -130,14 +138,5 @@ export const IconChefHat = (p) => (
 export const IconFlame = (p) => (
     <Svg sw={1.6} {...p}>
         <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z" />
-    </Svg>
-);
-
-export const IconTruck = (p) => (
-    <Svg {...p}>
-        <path d="M14 18V6a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1" />
-        <path d="M14 9h4l3 3v5a1 1 0 0 1-1 1h-1" />
-        <circle cx="7" cy="18" r="2" />
-        <circle cx="17" cy="18" r="2" />
     </Svg>
 );
