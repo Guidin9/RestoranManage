@@ -845,10 +845,15 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 /* -------------------------------------------------------------------------
    Gruplu liste — kategori başına tek yüzey, satırlar saç teli ayıraçla
 
-   scroll-margin-top, useMenuNav.js'teki CHROME sabitiyle AYNI olmalı:
-   pill'e dokununca bölüm başlığı yapışkan kabuğun altında kalmasın.
+   scroll-margin-top kabuğun GERÇEK yüksekliği kadar olmalı, yoksa pill'e
+   dokununca bölüm başlığı şeridin altında kalır. Çentikli telefonda kabuk
+   safe-area kadar uzuyor; sabit bir px bu yüzden yanlış. JS tarafı aynı
+   ölçüyü nav'ın offsetHeight'ından okuyor (useMenuNav.js).
    ------------------------------------------------------------------------- */
-.menu-section { scroll-margin-top: 96px; margin-bottom: 22px; }
+.menu-section {
+  scroll-margin-top: calc(96px + env(safe-area-inset-top));
+  margin-bottom: 22px;
+}
 
 .section-label {
   font: 700 11px/1 var(--sans);

@@ -127,7 +127,7 @@ function App() {
 
     // Yapışkan kabuk (küçülen başlık + kategori şeridi). Erken return'lerden
     // ÖNCE çağrılmalı — hook sırası her render'da aynı kalmak zorunda.
-    const { activeId, collapsed, sentinelRef, stripRef, scrollToSection } =
+    const { activeId, collapsed, navRef, sentinelRef, stripRef, scrollToSection } =
         useMenuNav(menu.map((category) => sectionId(category.id)));
 
     // 🔴 1. SENARYO: "/cashier" adresi açıldıysa Kasa Ekranını göster
@@ -171,7 +171,7 @@ function App() {
                 yapışır — böylece içerik altından kayar ve sayfaya elle üst
                 padding vermek gerekmez. Materyal ve saç teli ayıraç yalnızca
                 içerik altına girdiğinde belirir (scroll edge effect). */}
-            <div className={`menu-nav${collapsed ? ' is-collapsed' : ''}`}>
+            <div ref={navRef} className={`menu-nav${collapsed ? ' is-collapsed' : ''}`}>
                 <div className="menu-nav-row">
                     <span className="menu-nav-title" aria-hidden="true">Mert'in QR Menü</span>
                     <span className="table-chip">

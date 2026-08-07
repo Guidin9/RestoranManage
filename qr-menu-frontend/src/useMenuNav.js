@@ -8,10 +8,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Yapışkan kabuğun yüksekliği (nav 52 + kategori şeridi 44). index.css'teki
-// .menu-section { scroll-margin-top } ile AYNI kalmalı — yoksa pill'e
-// dokununca hedef bölümün başlığı kabuğun altında kalır.
-const CHROME = 96;
+// Kabuğun tahmini yüksekliği (nav 52 + kategori şeridi 44). Yalnızca ölçüm
+// yapılamadığında kullanılan yedek: çentikli telefonda kabuk safe-area kadar
+// daha uzun oluyor, o yüzden gerçek değer nav'ın offsetHeight'ından okunuyor.
+const CHROME_FALLBACK = 96;
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const behavior = () => (reduced() ? 'auto' : 'smooth');
@@ -20,28 +20,33 @@ export function useMenuNav(sectionIds) {
     const [activeId, setActiveId] = useState(null);
     const [collapsed, setCollapsed] = useState(false);
 
+    const navRef = useRef(null);
     const sentinelRef = useRef(null);
     const stripRef = useRef(null);
+
+    const chrome = () => navRef.current?.offsetHeight || CHROME_FALLBACK;
     // Pill'e dokunulduğunda kaydırma sürerken observer aradaki her bölümü
     // sırayla aktif yapar ve şerit titrer. Kaydırma boyunca observer susar.
     const lockedUntil = useRef(0);
 
     // 1) Büyük başlık kabuğun altına girdi mi? Girdiyse kompakt başlık gelir.
+    //    key bağımlılıkta: menü gelince kategori şeridi de basılıyor ve kabuk
+    //    uzuyor — observer'ın eşiği o yeni yüksekliğe göre kurulmalı.
+    const key = sectionIds.join('|');
     useEffect(() => {
         const el = sentinelRef.current;
         if (!el) return undefined;
 
         const io = new IntersectionObserver(
             ([entry]) => setCollapsed(!entry.isIntersecting),
-            { rootMargin: `-${CHROME}px 0px 0px 0px` },
+            { rootMargin: `-${chrome()}px 0px 0px 0px` },
         );
         io.observe(el);
         return () => io.disconnect();
-    }, []);
+    }, [key]);
 
     // 2) Hangi kategori okunuyor? Kabuğun hemen altındaki dar bandı kesen
     //    bölümlerden DOM sırasında ilki aktiftir.
-    const key = sectionIds.join('|');
     useEffect(() => {
         const ids = key ? key.split('|') : [];
         const nodes = ids.map((id) => document.getElementById(id)).filter(Boolean);
@@ -62,7 +67,7 @@ export function useMenuNav(sectionIds) {
                 const next = ids.find((id) => visible.has(id));
                 if (next) setActiveId(next);
             },
-            { rootMargin: `-${CHROME + 4}px 0px -60% 0px` },
+            { rootMargin: `-${chrome() + 4}px 0px -60% 0px` },
         );
         nodes.forEach((node) => io.observe(node));
         return () => io.disconnect();
@@ -92,5 +97,5 @@ export function useMenuNav(sectionIds) {
         el.scrollIntoView({ behavior: behavior(), block: 'start' });
     }, []);
 
-    return { activeId, collapsed, sentinelRef, stripRef, scrollToSection };
+    return { activeId, collapsed, navRef, sentinelRef, stripRef, scrollToSection };
 }
