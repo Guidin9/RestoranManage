@@ -206,6 +206,17 @@ function Cashier() {
             <div ref={sentinelRef} className="menu-sentinel" aria-hidden="true" />
 
             <div className="panel-body">
+                {/* Eş düzeyde iki sekme: yön veren bir hareket yanlış olurdu, hiçbiri
+                    diğerinin altında ya da yanında değil. Sadece 180ms cross-fade —
+                    Admin ekranındaki sekme geçişiyle birebir aynı. */}
+                <AnimatePresence mode="wait" initial={false}>
+                    <m.div
+                        key={view}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={fadeOut}
+                    >
                 {view === 'summary' ? (
                     <CashierSummary onAuthError={handleSummaryAuthError} />
                 ) : loading ? (
@@ -220,12 +231,6 @@ function Cashier() {
                                 </ul>
                             </div>
                         ))}
-                    </div>
-                ) : orders.length === 0 ? (
-                    <div className="empty">
-                        <div className="empty-icon"><IconCloche size={30} /></div>
-                        <h3>Şu an açık masanız yok</h3>
-                        <p>Yeni siparişler geldikçe burada listelenecek.</p>
                     </div>
                 ) : (
                     <>
@@ -307,8 +312,34 @@ function Cashier() {
                                 })}
                             </AnimatePresence>
                         </div>
+
+                        {/* Boş durum ızgaranın KARDEŞİ, koşul dalı değil: dal olduğu
+                            sürece liste boşaldığında AnimatePresence komple unmount
+                            oluyordu ve son kartın yukarıda yazılı exit'i hiç
+                            oynamıyordu. Gecikme kartın scale yayının bitmesini bekler
+                            — kısaltılırsa ızgara çökerken boş blok yukarı zıplar. */}
+                        <AnimatePresence initial={false}>
+                            {orders.length === 0 && (
+                                <m.div
+                                    className="empty"
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{
+                                        opacity: { ...fadeOut, delay: 0.42 },
+                                        y: { ...springDefault, delay: 0.42 },
+                                    }}
+                                >
+                                    <div className="empty-icon"><IconCloche size={30} /></div>
+                                    <h3>Şu an açık masanız yok</h3>
+                                    <p>Yeni siparişler geldikçe burada listelenecek.</p>
+                                </m.div>
+                            )}
+                        </AnimatePresence>
                     </>
                 )}
+                    </m.div>
+                </AnimatePresence>
             </div>
 
             {/* HESAP KAPATMA ONAY MODALI — el yapımı overlay yerine <Modal>:

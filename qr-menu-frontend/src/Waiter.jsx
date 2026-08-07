@@ -60,6 +60,11 @@ function Waiter() {
     };
     useEffect(() => () => clearTimeout(releaseTimer.current), []);
 
+    /* Adisyon paneli hangi karttan açıldı? Modal ölçeğini bu elemanın merkezinden
+       başlatıyor (Modal.jsx originRef), böylece panelin nereden geldiği görünüyor.
+       Onay diyalogları bunu KULLANMAZ — onlar merkezden gelmeli. */
+    const cardOriginRef = useRef(null);
+
     // 1. MANTIK: Garson Girişi
     const handleLogin = (e) => {
         e.preventDefault();
@@ -314,7 +319,13 @@ function Waiter() {
                             return (
                                 <m.button
                                     key={table.id}
-                                    onClick={() => setSelectedTable(table)}
+                                    onClick={(event) => {
+                                        // currentTarget: kartın kendisi. event.target
+                                        // içteki <span> olabilir, modal yanlış
+                                        // noktadan büyürdü.
+                                        cardOriginRef.current = event.currentTarget;
+                                        setSelectedTable(table);
+                                    }}
                                     className={`table-card ${table.is_occupied ? 'table-card--busy' : 'table-card--free'} ${ready ? 'table-card--pending' : ''}`}
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -349,6 +360,7 @@ function Waiter() {
                 open={!!selectedTable}
                 onClose={() => setSelectedTable(null)}
                 labelledBy="table-modal-title"
+                originRef={cardOriginRef}
             >
                 {selectedTable && (
                     <>

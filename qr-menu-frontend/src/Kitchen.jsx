@@ -141,16 +141,11 @@ function Kitchen() {
                             </div>
                         ))}
                     </div>
-                ) : orders.length === 0 ? (
-                    <div className="empty">
-                        <div className="empty-icon"><IconFlame size={30} /></div>
-                        <h3>Hazırlanacak sipariş yok</h3>
-                        <p>Yeni siparişler geldikçe burada belirecek.</p>
-                    </div>
                 ) : (
-                    // 4sn'lik poll bu listeyi baştan yazıyor. Hazırlanan fiş
-                    // yok olmak yerine animasyonla çıksın — mutfakta iki fişin
-                    // yeri anlık takas olduğunda yanlış olana basılıyor.
+                    <>
+                    {/* 4sn'lik poll bu listeyi baştan yazıyor. Hazırlanan fiş
+                        yok olmak yerine animasyonla çıksın — mutfakta iki fişin
+                        yeri anlık takas olduğunda yanlış olana basılıyor. */}
                     <div className="grid grid-cards">
                         <AnimatePresence initial={false}>
                             {orders.map((order) => {
@@ -201,6 +196,30 @@ function Kitchen() {
                             })}
                         </AnimatePresence>
                     </div>
+
+                    {/* Boş durum ızgaranın KARDEŞİ, koşul dalı değil: dal olduğu
+                        sürece liste boşaldığında AnimatePresence komple unmount
+                        oluyordu ve son fişin yukarıda yazılı exit'i hiç oynamıyordu.
+                        Gecikme fişin scale yayının bitmesini bekler. */}
+                    <AnimatePresence initial={false}>
+                        {orders.length === 0 && (
+                            <m.div
+                                className="empty"
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                transition={{
+                                    opacity: { ...fadeOut, delay: 0.42 },
+                                    y: { ...springDefault, delay: 0.42 },
+                                }}
+                            >
+                                <div className="empty-icon"><IconFlame size={30} /></div>
+                                <h3>Hazırlanacak sipariş yok</h3>
+                                <p>Yeni siparişler geldikçe burada belirecek.</p>
+                            </m.div>
+                        )}
+                    </AnimatePresence>
+                    </>
                 )}
             </div>
         </div>

@@ -127,8 +127,10 @@ function CashierSummary({ onAuthError }) {
     const kpis = data?.today;
     const hasSales = kpis && kpis.tables_closed > 0;
 
+    // Kök .reveal kaldırıldı: sekme geçişi artık Cashier.jsx'te cross-fade yapıyor,
+    // ikinci bir CSS fade üstüne binmesin.
     return (
-        <div className="reveal">
+        <div>
             {/* Tarih seçici */}
             <div className="summary-toolbar">
                 <label className="label" style={{ margin: 0 }}>Tarih</label>

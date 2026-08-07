@@ -11,7 +11,7 @@ import { CartSheet } from './CartSheet';
 import { Modal } from './Modal';
 import { useToast } from './useToast';
 import { useMenuNav } from './useMenuNav';
-import { fadeOut, springDefault } from './motion';
+import { fadeOut, springDefault, springSnappy, springSheet } from './motion';
 
 const sectionId = (categoryId) => `cat-${categoryId}`;
 
@@ -231,13 +231,27 @@ function App() {
                                         >
                                             <span className="tab-item-qty">{it.quantity}×</span>
                                             <span className="tab-item-name">{it.name}</span>
-                                            {it.stage === 'served' ? (
-                                                <span className="status-tag status-tag--ok">Servis edildi</span>
-                                            ) : it.stage === 'ready' ? (
-                                                <span className="status-tag status-tag--ready">Servise hazır</span>
-                                            ) : (
-                                                <span className="status-tag status-tag--wait">Hazırlanıyor</span>
-                                            )}
+                                            {/* Aşama değişimi müşterinin beklediği tek
+                                                sinyal; 5sn'lik poll'da sessizce takas
+                                                olmasın. AnimatePresence YOK ve exit YOK:
+                                                etiket bir an yok olsa satırdaki fiyat
+                                                sağa sola sıçrardı. key değişimi aynı
+                                                commit'te eskiyi söküp yenisini takar. */}
+                                            <m.span
+                                                key={it.stage}
+                                                className={
+                                                    it.stage === 'served' ? 'status-tag status-tag--ok'
+                                                        : it.stage === 'ready' ? 'status-tag status-tag--ready'
+                                                            : 'status-tag status-tag--wait'
+                                                }
+                                                initial={{ opacity: 0, y: -3 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ opacity: fadeOut, y: springSnappy }}
+                                            >
+                                                {it.stage === 'served' ? 'Servis edildi'
+                                                    : it.stage === 'ready' ? 'Servise hazır'
+                                                        : 'Hazırlanıyor'}
+                                            </m.span>
                                             <span className="tab-item-price">{it.line_total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
                                         </m.li>
                                     ))}
@@ -319,7 +333,21 @@ function App() {
                 overlayClassName="confirm-overlay"
                 className="confirm-card"
             >
-                <div className="confirm-icon"><IconCheck size={ICON.xl} sw={2.4} /></div>
+                {/* Öğün başına bir kez görülen keyif anı: springSheet'in bounce 0.2'si
+                    için motion.js'teki "jest yoksa bounce 0" kuralına BİLİNÇLİ
+                    istisna. Kart oturmaya başladıktan 60ms sonra girer, yoksa iki
+                    ölçek üst üste biner ve tik sıradan bir eleman gibi okunur. */}
+                <m.div
+                    className="confirm-icon"
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{
+                        scale: { ...springSheet, delay: 0.06 },
+                        opacity: { ...fadeOut, delay: 0.06 },
+                    }}
+                >
+                    <IconCheck size={ICON.xl} sw={2.4} />
+                </m.div>
                 <div className="confirm-title" id="confirm-title">Siparişiniz alındı</div>
                 <div className="confirm-sub">Garsonumuz masanıza getiriyor. Afiyet olsun!</div>
                 <button onClick={() => setOrderConfirmed(false)} className="btn btn-ink btn-block mt-5">Menüye Dön</button>

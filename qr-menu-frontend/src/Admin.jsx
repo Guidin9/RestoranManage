@@ -6,7 +6,7 @@ import { ICON } from './iconScale';
 import { useToast } from './useToast';
 import { useScrolled } from './useScrolled';
 import { Modal } from './Modal';
-import { fadeOut } from './motion';
+import { fadeOut, springDefault } from './motion';
 
 // QR kodu panelin açıldığı adresi hedefler; canlıda otomatik olarak doğru domain olur.
 const menuUrlFor = (qrCode) => `${window.location.origin}/?table=${qrCode}`;
@@ -338,17 +338,28 @@ function Admin() {
                                 <button type="submit" className="btn btn-success"><IconPlus size={15} />Ekle</button>
                             </form>
 
+                            {/* Ekleme/silme ışınlanmasın. Silmenin geri alması yok
+                                (bkz. yukarıdaki onay notu): satırın gittiği görünsün. */}
                             <div className="stack" style={{ gap: 9 }}>
-                                {waiters.map(w => (
-                                    <div key={w.id} className="staff-row">
-                                        <div className="avatar"><IconUser size={18} sw={1.6} /></div>
-                                        <div style={{ flex: 1 }}>
-                                            <div className="staff-name">{w.name}</div>
-                                            <div className="staff-user">@{w.username}</div>
-                                        </div>
-                                        <button onClick={() => deleteWaiter(w)} className="btn btn-danger btn-sm"><IconTrash size={13} />Sil</button>
-                                    </div>
-                                ))}
+                                <AnimatePresence initial={false}>
+                                    {waiters.map(w => (
+                                        <m.div
+                                            key={w.id}
+                                            className="staff-row"
+                                            initial={{ opacity: 0, x: -8 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -8 }}
+                                            transition={{ opacity: fadeOut, x: springDefault }}
+                                        >
+                                            <div className="avatar"><IconUser size={18} sw={1.6} /></div>
+                                            <div style={{ flex: 1 }}>
+                                                <div className="staff-name">{w.name}</div>
+                                                <div className="staff-user">@{w.username}</div>
+                                            </div>
+                                            <button onClick={() => deleteWaiter(w)} className="btn btn-danger btn-sm"><IconTrash size={13} />Sil</button>
+                                        </m.div>
+                                    ))}
+                                </AnimatePresence>
                             </div>
                         </div>
                     )}
@@ -442,18 +453,31 @@ function Admin() {
                                             {c.products.length === 0 && (
                                                 <p className="muted" style={{ padding: '10px 5px', fontSize: 13, fontStyle: 'italic' }}>Bu kategoride ürün yok.</p>
                                             )}
-                                            {c.products.map(p => (
-                                                <div key={p.id} className="item-row">
-                                                    {p.image_url ? (
-                                                        <img src={p.image_url} alt={p.name} className="thumb-sm" />
-                                                    ) : (
-                                                        <div className="thumb-sm thumb-sm--empty"><span>foto</span></div>
-                                                    )}
-                                                    <div className="item-name">{p.name}</div>
-                                                    <div className="item-price">{p.price} ₺</div>
-                                                    <button onClick={() => deleteProduct(p)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
-                                                </div>
-                                            ))}
+                                            {/* Kategori kartının kendisi .reveal taşıyor,
+                                                bu yüzden hareket yalnızca İÇ satırlarda:
+                                                aynı elemanda CSS keyframe + Motion
+                                                transform çakışır ve titrer. */}
+                                            <AnimatePresence initial={false}>
+                                                {c.products.map(p => (
+                                                    <m.div
+                                                        key={p.id}
+                                                        className="item-row"
+                                                        initial={{ opacity: 0, x: -8 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        exit={{ opacity: 0, x: -8 }}
+                                                        transition={{ opacity: fadeOut, x: springDefault }}
+                                                    >
+                                                        {p.image_url ? (
+                                                            <img src={p.image_url} alt={p.name} className="thumb-sm" />
+                                                        ) : (
+                                                            <div className="thumb-sm thumb-sm--empty"><span>foto</span></div>
+                                                        )}
+                                                        <div className="item-name">{p.name}</div>
+                                                        <div className="item-price">{p.price} ₺</div>
+                                                        <button onClick={() => deleteProduct(p)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
+                                                    </m.div>
+                                                ))}
+                                            </AnimatePresence>
                                         </div>
                                     </div>
                                 ))}
