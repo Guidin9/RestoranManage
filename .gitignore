@@ -17,3 +17,13 @@ Thumbs.db
 # Claude Code kişisel ayarları (makineye özel izinler ve yollar).
 # Ekipçe paylaşılacak ayarlar .claude/settings.json içine yazılır.
 .claude/settings.local.json
+
+# Yerel ajan araclari — projeye ait degil, makinede kurulu.
+# Istisna: .claude/skills/deploy CLAUDE.md'den referans verilen proje
+# prosedurudur, o izlenir.
+/.agents/
+/skills-lock.json
+/.claude/*
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/deploy/
