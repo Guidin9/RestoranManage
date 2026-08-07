@@ -7,11 +7,11 @@
    Görünüm burada; ekran JSX'leri yalnızca className kullanır.
 
    Tailwind v4 ile birlikte çalışır. İki katman kuralı:
-   - İsimlendirilmiş tasarım nesneleri (.btn, .panel, .prod-card ...) burada,
+   - İsimlendirilmiş tasarım nesneleri (.btn, .panel, .group-card ...) burada,
      @layer components içinde yaşar.
    - Tek seferlik yerleşim/boşluk JSX'te utility ile yazılır (mt-5, flex-1 ...).
    Katman şart: katmansız CSS tüm utility'leri yener, o yüzden buradaki
-   her kural bir @layer içinde olmalı — yoksa className="prod-card mb-3"
+   her kural bir @layer içinde olmalı — yoksa className="group-card mb-3"
    yazdığında mb-3 sessizce çalışmaz.
 
    Fontlar index.html'de <link> ile yükleniyor (@import zincirli istek olurdu).
@@ -146,8 +146,8 @@
 
    Koyu zemin üstündeki kabuk paleti (#eef4f2, #fff, #c3d6b0, #e8a99e ...)
    zaten --deep-grad üzerinde yaşıyor ve iki temada da doğru — panel/login
-   başlıkları, .menu-head, .tab-total, modal başlığı ve sepet çubuğu için
-   burada renk işi YOK. Düzeltmeye çalışma. */
+   başlıkları, modal başlığı ve sepet çubuğu için burada renk işi YOK.
+   Düzeltmeye çalışma. */
 @media (prefers-color-scheme: dark) {
   :root {
     --ink: #dce7eb;
@@ -322,7 +322,7 @@
    Tipografi ölçeği — boyuta özgü tracking
 
    Bilerek katmanın EN BAŞINDA. Kendi letter-spacing'ini zaten yazan sekiz
-   sınıf (.label, .menu-eyebrow, .menu-arch-label, .tab-total-label,
+   sınıf (.label, .menu-eyebrow, .section-label, .tab-total-label,
    .status-tag, .table-status, .badge-pending, .kpi-label) aynı
    specificity'de ve daha sonra geldiği için otomatik kazanır — ki doğrusu
    da o, hepsi büyük-harf caps tracking'i. Böylece ~90 font kısayolunu tek
@@ -332,15 +332,15 @@
 .menu-brand, .kpi-value                                     { letter-spacing: var(--track-display); }
 .panel-title, .modal-title, .confirm-title, .table-name,
 .order-table, .empty h3, .tab-total-value, .login-head h2   { letter-spacing: var(--track-title); }
-.prod-name, .prod-price, .cat-name, .ctx-title,
+.row-name, .menu-nav-title, .cat-name, .ctx-title,
 .item-name, .item-price, .order-total-value, .cart-total    { letter-spacing: var(--track-heading); }
-.line-name, .staff-name, .input, .select, .tab              { letter-spacing: var(--track-body); }
-.cart-name, .cart-price, .add-chip-price, .order-time,
-.pbar-sub, .staff-user, .table-meta                         { letter-spacing: var(--track-small); }
+.line-name, .staff-name, .input, .select, .tab, .cat-pill   { letter-spacing: var(--track-body); }
+.cart-name, .cart-price, .add-chip-price, .order-time, .row-price,
+.pbar-sub, .staff-user, .table-meta, .table-chip            { letter-spacing: var(--track-small); }
 .cart-count, .status-tag, .badge-pending                    { letter-spacing: var(--track-micro); }
 
 /* Sabit genişlikli rakam — adet değişince fiyatlar yatay zıplamasın */
-.prod-price, .cart-total, .cart-price, .cart-qty, .qty-num, .line-price, .line-qty,
+.row-price, .cart-total, .cart-price, .cart-qty, .qty-num, .line-price, .line-qty,
 .order-line-price, .order-total-value, .tab-item-price, .tab-item-qty, .tab-total-value,
 .kpi-value, .pbar-value, .item-price, .total-row, .pending-line-price, .pending-cart-total,
 .order-time, .cart-meta { font-variant-numeric: tabular-nums; }
@@ -658,89 +658,174 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   animation: fade-in 0.5s var(--ease-out) both;
 }
 
-.menu-head {
-  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 20px
+/* -------------------------------------------------------------------------
+   Yapışkan kabuk: nav çubuğu + kategori şeridi
+
+   Akışın ilk elemanı ve position: sticky — önce yer kaplar, sonra yapışır.
+   İçerik altından kaydığı için sayfaya elle üst padding gerekmez.
+   backdrop-filter SÜREKLİ açık, sadece zemin rengi ve ayıraç geçiş yapıyor:
+   blur'u sonradan açmak gözle görülür bir "pat" yaratıyor, sayfanın en
+   üstündeyken de arkada düz zemin olduğu için blur zaten görünmüyor.
+   ------------------------------------------------------------------------- */
+.menu-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 0
              calc(-1 * max(16px, env(safe-area-inset-left)));
-  padding: calc(34px + env(safe-area-inset-top)) 22px 20px;
-  background: var(--deep-grad);
-  color: #eef4f2;
-  border-radius: 0 0 26px 26px;
-  box-shadow: var(--shadow-head);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 14px;
+  padding-top: env(safe-area-inset-top);
+  background: transparent;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 1px 0 0 transparent;
+  transition: background 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
+.menu-nav.is-collapsed {
+  background: var(--glass);
+  box-shadow: 0 1px 0 0 var(--line-hair);
+}
+
+.menu-nav-row {
+  height: 52px;
+  padding: 0 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+
+/* Kompakt başlık — büyük başlık kabuğun altına girince devralır. Aşağıdan
+   yukarı gelmesi hareketin yönünü haber verir: yerini aldığı başlık yukarı
+   kaymıştır. */
+.menu-nav-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 400 17px/1.15 var(--serif);
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(7px);
+  transition: opacity 0.2s var(--ease-out), transform 0.28s var(--ease-out);
+}
+.is-collapsed .menu-nav-title { opacity: 1; transform: none; }
+
+.table-chip {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--tint-sea);
+  color: var(--tint-sea-ink);
+  font: 700 12px/1 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kategori şeridi — yatay kaydırılır, çubuğu gizli. .cart-lines'taki
+   ResizeObserver tuzağı burada YOK: bu şeridin yüksekliği ölçülmüyor. */
+.cat-bar {
+  display: flex;
+  gap: 7px;
+  padding: 0 18px 11px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.cat-bar::-webkit-scrollbar { display: none; }
+
+.cat-pill {
+  position: relative;
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-dim);
+  font: 600 13px/1 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out),
+              border-color 0.2s var(--ease-out), transform 0.15s var(--ease-out);
+}
+/* Görsel kutu 32px kalıyor, dokunma alanı 44px'e çıkıyor */
+.cat-pill::after { content: ''; position: absolute; inset: -6px -2px; }
+.cat-pill.is-active {
+  background: var(--sea);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* -------------------------------------------------------------------------
+   Büyük başlık — kabuğun altında, kaydırınca onun altına girer
+   ------------------------------------------------------------------------- */
+.menu-hero { padding: 12px 4px 20px; }
 .menu-eyebrow {
   font: 400 9px/1 var(--sans);
   letter-spacing: var(--track-caps-wide);
   text-transform: uppercase;
-  color: rgba(238, 244, 242, 0.55);
+  color: var(--ink-faint);
 }
-.menu-brand { font: 400 30px/1.1 var(--serif); margin-top: 8px; }
-.menu-arch { text-align: center; flex: none; }
-.menu-arch-shape {
-  min-width: 46px; height: 46px;
-  padding: 0 10px 6px;
-  border-radius: 0 0 999px 999px;
-  border: 1.5px solid rgba(238, 244, 242, 0.45);
-  border-top: none;
-  display: flex; align-items: flex-end; justify-content: center;
-  font: 400 14px/1 var(--serif);
-  white-space: nowrap;
+.menu-brand {
+  font: 400 clamp(30px, 8.4vw, 38px)/var(--lead-display) var(--serif);
+  color: var(--ink);
+  margin-top: 8px;
 }
-.menu-arch-label {
-  font: 600 8px/1 var(--sans);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: rgba(238, 244, 242, 0.6);
-  margin-top: 5px;
-}
+/* Kompakt başlığın eşiğini belirleyen sıfır yükseklikli işaret */
+.menu-sentinel { height: 0; }
 
-/* Yükleme iskeleti — "Yükleniyor..." metni kemeri deforme ediyordu */
+/* Yükleme iskeleti — boş sayfa yerine içeriğin biçimi. currentColor'a
+   bağlı: hangi yüzeyde olursa olsun doğru tonu alır. */
 .skel {
   display: inline-block;
   min-width: 30px;
-  height: 14px;
+  height: 12px;
   border-radius: 999px;
-  background: rgba(238, 244, 242, 0.28);
-  animation: ml-pulse 1.4s ease-in-out infinite;
+  vertical-align: middle;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+  animation: skel-pulse 1.5s ease-in-out infinite;
+}
+.skel-line { display: block; width: 62%; height: 13px; }
+.skel-tile {
+  width: 48px; height: 48px;
+  border-radius: 13px;
+  flex: none;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  animation: skel-pulse 1.5s ease-in-out infinite;
 }
 
-/* Masa hesabı paneli — toplam + sipariş edilen ürünler (teslim durumuyla) */
-.tab-panel {
-  margin: 4px 0 10px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--line);
-}
-.tab-total {
+/* Masa hesabı — menünün ilk gruplu bölümü. Toplam üstte, sipariş edilen
+   ürünler teslim durumuyla altında. */
+.tab-total-row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 16px;
-  background: var(--deep-grad);
-  color: #eef4f2;
+  padding: 14px 16px 13px;
+  border-bottom: 1px solid var(--line-hair);
 }
 .tab-total-label {
-  font: 600 11px/1 var(--sans);
+  font: 700 11px/1 var(--sans);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
-  color: rgba(238, 244, 242, 0.6);
+  color: var(--ink-dim);
 }
-.tab-total-value { font: 400 22px/1 var(--serif); color: #fff; }
+.tab-total-value { font: 400 24px/1 var(--serif); color: var(--ink); }
 
-.tab-items { list-style: none; margin: 0; padding: 6px 14px; background: var(--paper); }
+.tab-items { list-style: none; margin: 0; padding: 0; }
 .tab-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--line);
+  padding: 11px 16px;
 }
-.tab-item:last-child { border-bottom: none; }
+.tab-item + .tab-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 16px; right: 16px;
+  height: 1px;
+  background: var(--line-hair);
+}
 .tab-item-qty { font: 700 12px/1 var(--sans); color: var(--olive); min-width: 24px; }
 .tab-item-name { flex: 1; font: 600 13px/1.2 var(--sans); color: var(--ink); min-width: 0; }
 .tab-item-price { font: 600 13px/1 var(--sans); color: var(--ink); min-width: 64px; text-align: right; }
@@ -757,51 +842,99 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .status-tag--wait { background: var(--tint-warn); color: var(--tint-warn-ink); }
 .status-tag--ready { background: var(--tint-sea); color: var(--tint-sea-ink); }
 
-.cat-title { font: 700 13px/1 var(--sans); color: var(--ink); margin: 18px 4px 12px; }
+/* -------------------------------------------------------------------------
+   Gruplu liste — kategori başına tek yüzey, satırlar saç teli ayıraçla
+
+   scroll-margin-top, useMenuNav.js'teki CHROME sabitiyle AYNI olmalı:
+   pill'e dokununca bölüm başlığı yapışkan kabuğun altında kalmasın.
+   ------------------------------------------------------------------------- */
+.menu-section { scroll-margin-top: 96px; margin-bottom: 22px; }
+
+.section-label {
+  font: 700 11px/1 var(--sans);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 0 0 9px 16px;
+}
 
 /* Sayfa gradient'inin üstünde açık materyal. Başka bir yarı saydam yüzeyle
    asla üst üste gelmiyor — "açığın üstüne açık koyma" kuralı sağlam.
    Üst kenar bir tık parlak: materyale çarpan ışık. */
-.prod-card {
+.group-card {
   background: var(--glass);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid var(--glass-edge);
   border-top-color: var(--glass-top);
-  border-radius: 20px;
-  padding: 12px;
-  margin-bottom: 12px;
-  display: flex;
-  gap: 13px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-inset), var(--shadow-card);
+  overflow: hidden;
 }
-.prod-thumb {
-  width: 76px; height: 76px;
-  border-radius: 14px;
+
+.menu-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  min-height: 66px;
+}
+/* iOS ayıracı metnin sol kenarından başlar: 14 padding + 48 kutu + 12 gap */
+.menu-row + .menu-row::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 74px; right: 0;
+  height: 1px;
+  background: var(--line-hair);
+}
+
+.row-thumb {
+  width: 48px; height: 48px;
+  border-radius: 13px;
   object-fit: cover;
   flex: none;
 }
-.prod-thumb--empty,
+/* Fotoğrafsız ürün: ürünün baş harfi. Boşluğu kasıtlı gösterir ve hizayı
+   korur — fotoğraflı/fotoğrafsız satırlarda metin aynı hizada başlar. */
+.row-mono {
+  width: 48px; height: 48px;
+  border-radius: 13px;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--tint-sea);
+  color: var(--tint-sea-ink);
+  font: 400 20px/1 var(--serif);
+}
 .thumb-sm--empty {
   background-color: var(--placeholder);
   background-image: repeating-linear-gradient(45deg, var(--line-soft) 0 7px, transparent 7px 14px);
   display: flex; align-items: center; justify-content: center;
 }
-.prod-thumb--empty span,
 .thumb-sm--empty span {
   font: 500 8.5px ui-monospace, Menlo, monospace;
   color: var(--ink-faint);
   letter-spacing: var(--track-micro);
 }
-.prod-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.prod-name { font: 700 15px/1.15 var(--sans); color: var(--ink); }
-.prod-foot {
-  margin-top: auto;
-  display: flex; align-items: center; justify-content: space-between;
-  padding-top: 10px;
-  gap: 10px;
+
+.row-body { flex: 1; min-width: 0; }
+.row-name { font: 600 15px/1.25 var(--sans); color: var(--ink); }
+.row-price { font: 600 13px/1 var(--sans); color: var(--ink-dim); margin-top: 5px; }
+
+/* Ekle — 32px daire, dokunma alanı ::after ile 44px */
+.row-add {
+  position: relative;
+  flex: none;
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: var(--olive);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s var(--ease-out);
 }
-.prod-price { font: 700 15px/1 var(--sans); color: var(--ink); }
+.row-add::after { content: ''; position: absolute; inset: -6px; }
 
 /* Adet sayacı — görsel kutu 26px kalıyor (yoğunluk kasıtlı), dokunma alanı
    pseudo-element ile 44x36'ya çıkıyor. gap 3 → 10 ZORUNLU ön koşul:
@@ -1509,6 +1642,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   .tab:hover { color: var(--ink); }
   .qty-btn:hover { background: var(--sand); }
   .qty-btn--inc:hover { background: var(--olive-deep); }
+  .cat-pill:hover { color: var(--ink); border-color: var(--line-strong); }
+  .cat-pill.is-active:hover { color: #fff; border-color: transparent; }
+  .row-add:hover { background: var(--olive-deep); }
   .table-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); }
   .order-deliver:hover { background: var(--olive-deep); }
   .order-prepare:hover { background: var(--sea-deep); }
@@ -1528,7 +1664,8 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    ========================================================================= */
 
 .btn:active, .qty-btn:active, .tab:active, .order-pay:active, .order-deliver:active,
-.order-prepare:active, .table-card:active, .btn-text-danger:active {
+.order-prepare:active, .table-card:active, .btn-text-danger:active,
+.row-add:active, .cat-pill:active {
   transform: scale(0.97);
   transition-duration: 90ms;
 }
@@ -1539,8 +1676,8 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    ========================================================================= */
 
 @media (prefers-contrast: more) {
-  .prod-card, .panel, .order-card, .kpi, .chart-card,
-  .add-chip, .staff-row, .line-row, .table-card {
+  .group-card, .panel, .order-card, .kpi, .chart-card,
+  .add-chip, .staff-row, .line-row, .table-card, .cat-pill {
     border-width: 1.5px;
     border-color: var(--line-strong);
   }
@@ -1550,11 +1687,17 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .prod-card {
+  .group-card {
     background: var(--paper);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     border-color: var(--line);
+  }
+  /* Kabuk her zaman opak: saydamlık kapalıyken içerik altından geçmesin */
+  .menu-nav, .menu-nav.is-collapsed {
+    background: var(--paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .cart-bar {
     background: var(--surface-deep);
@@ -1585,6 +1728,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 @keyframes pop-in     { 0% { opacity: 0; transform: scale(0.96) translateY(8px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes shake      { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 @keyframes ml-pulse   { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.6); } }
+/* İskelet nabzı ml-pulse'tan AYRI: ml-pulse scale(0.6) da yapıyor, bir
+   iskelet çubuğunda bu büzülme yanlış okunur. */
+@keyframes skel-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 @keyframes spin       { to { transform: rotate(360deg); } }
 
 @layer base {

@@ -10,7 +10,10 @@ import { ICON } from './iconScale';
 import { CartSheet } from './CartSheet';
 import { Modal } from './Modal';
 import { useToast } from './useToast';
+import { useMenuNav } from './useMenuNav';
 import { fadeOut, springDefault } from './motion';
+
+const sectionId = (categoryId) => `cat-${categoryId}`;
 
 function App() {
     const toast = useToast();
@@ -122,6 +125,11 @@ function App() {
             });
     };
 
+    // Yapışkan kabuk (küçülen başlık + kategori şeridi). Erken return'lerden
+    // ÖNCE çağrılmalı — hook sırası her render'da aynı kalmak zorunda.
+    const { activeId, collapsed, sentinelRef, stripRef, scrollToSection } =
+        useMenuNav(menu.map((category) => sectionId(category.id)));
+
     // 🔴 1. SENARYO: "/cashier" adresi açıldıysa Kasa Ekranını göster
     if (isCashierRoute) {
         return <Cashier />;
@@ -159,87 +167,142 @@ function App() {
     // 🟢 4. SENARYO: Normal Müşteri QR Menü Ekranı
     return (
         <div className="menu-page">
-            <header className="menu-head">
-                <div>
-                    <div className="menu-eyebrow">Hoş Geldiniz</div>
-                    <div className="menu-brand">Mert'in QR Menü</div>
+            {/* Yapışkan kabuk. Akışın EN BAŞINDA duruyor: önce yer kaplar, sonra
+                yapışır — böylece içerik altından kayar ve sayfaya elle üst
+                padding vermek gerekmez. Materyal ve saç teli ayıraç yalnızca
+                içerik altına girdiğinde belirir (scroll edge effect). */}
+            <div className={`menu-nav${collapsed ? ' is-collapsed' : ''}`}>
+                <div className="menu-nav-row">
+                    <span className="menu-nav-title" aria-hidden="true">Mert'in QR Menü</span>
+                    <span className="table-chip">
+                        Masa {tableNumber ?? <span className="skel" aria-label="Masa numarası yükleniyor" />}
+                    </span>
                 </div>
-                <div className="menu-arch">
-                    <div className="menu-arch-shape">
-                        {tableNumber ?? <span className="skel" aria-label="Masa numarası yükleniyor" />}
-                    </div>
-                    <div className="menu-arch-label">Masa</div>
-                </div>
+
+                {menu.length > 0 && (
+                    <nav className="cat-bar" ref={stripRef} aria-label="Kategoriler">
+                        {menu.map((category) => {
+                            const id = sectionId(category.id);
+                            return (
+                                <button
+                                    key={category.id}
+                                    type="button"
+                                    data-cat={id}
+                                    className={`cat-pill${activeId === id ? ' is-active' : ''}`}
+                                    aria-current={activeId === id ? 'true' : undefined}
+                                    onClick={() => scrollToSection(id)}
+                                >
+                                    {category.name}
+                                </button>
+                            );
+                        })}
+                    </nav>
+                )}
+            </div>
+
+            <header className="menu-hero">
+                <div className="menu-eyebrow">Hoş Geldiniz</div>
+                <h1 className="menu-brand">Mert'in QR Menü</h1>
             </header>
+            {/* Kompakt başlığın ne zaman geleceğini bu boş eleman belirler */}
+            <div ref={sentinelRef} className="menu-sentinel" aria-hidden="true" />
 
             {tableTotal > 0 && (
-                <div className="tab-panel">
-                    <div className="tab-total">
-                        <span className="tab-total-label">Masa Hesabı</span>
-                        <span className="tab-total-value">{tableTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                <section className="menu-section">
+                    <h2 className="section-label">Masa Hesabı</h2>
+                    <div className="group-card">
+                        <div className="tab-total-row">
+                            <span className="tab-total-label">Toplam</span>
+                            <span className="tab-total-value">{tableTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                        </div>
+                        {tableItems.length > 0 && (
+                            // 5sn'lik poll bu listeyi baştan yazıyor; layout animasyonu
+                            // olmadan satırlar kullanıcının gözü önünde ışınlanıyordu.
+                            <ul className="tab-items">
+                                <AnimatePresence initial={false}>
+                                    {tableItems.map((it, i) => (
+                                        <m.li
+                                            key={`${it.name}-${i}`}
+                                            className="tab-item"
+                                            initial={{ opacity: 0, y: -4 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -4 }}
+                                            transition={{ opacity: fadeOut, y: springDefault }}
+                                        >
+                                            <span className="tab-item-qty">{it.quantity}×</span>
+                                            <span className="tab-item-name">{it.name}</span>
+                                            {it.stage === 'served' ? (
+                                                <span className="status-tag status-tag--ok">Servis edildi</span>
+                                            ) : it.stage === 'ready' ? (
+                                                <span className="status-tag status-tag--ready">Servise hazır</span>
+                                            ) : (
+                                                <span className="status-tag status-tag--wait">Hazırlanıyor</span>
+                                            )}
+                                            <span className="tab-item-price">{it.line_total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                                        </m.li>
+                                    ))}
+                                </AnimatePresence>
+                            </ul>
+                        )}
                     </div>
-                    {tableItems.length > 0 && (
-                        // 5sn'lik poll bu listeyi baştan yazıyor; layout animasyonu
-                        // olmadan satırlar kullanıcının gözü önünde ışınlanıyordu.
-                        <ul className="tab-items">
-                            <AnimatePresence initial={false}>
-                                {tableItems.map((it, i) => (
-                                    <m.li
-                                        key={`${it.name}-${i}`}
-                                        className="tab-item"
-                                        initial={{ opacity: 0, y: -4 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -4 }}
-                                        transition={{ opacity: fadeOut, y: springDefault }}
-                                    >
-                                        <span className="tab-item-qty">{it.quantity}×</span>
-                                        <span className="tab-item-name">{it.name}</span>
-                                        {it.stage === 'served' ? (
-                                            <span className="status-tag status-tag--ok">Servis edildi</span>
-                                        ) : it.stage === 'ready' ? (
-                                            <span className="status-tag status-tag--ready">Servise hazır</span>
-                                        ) : (
-                                            <span className="status-tag status-tag--wait">Hazırlanıyor</span>
-                                        )}
-                                        <span className="tab-item-price">{it.line_total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
-                                    </m.li>
-                                ))}
-                            </AnimatePresence>
-                        </ul>
-                    )}
-                </div>
+                </section>
+            )}
+
+            {/* Menü henüz gelmediyse boş sayfa yerine içerik biçimli iskelet */}
+            {menu.length === 0 && (
+                <section className="menu-section" aria-hidden="true">
+                    <div className="section-label"><span className="skel w-24" /></div>
+                    <div className="group-card">
+                        {[0, 1, 2].map((i) => (
+                            <div key={i} className="menu-row">
+                                <div className="skel-tile" />
+                                <div className="row-body">
+                                    <span className="skel skel-line" />
+                                    <span className="skel w-14 mt-2" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             )}
 
             {menu.map((category, ci) => (
-                <section key={category.id} className="reveal" style={{ '--i': ci }}>
-                    <h3 className="cat-title">{category.name}</h3>
-                    {category.products.map((product) => {
-                        const qty = getItemQuantity(product.id);
-                        return (
-                            <div key={product.id} className="prod-card">
-                                {product.image_url ? (
-                                    <img src={product.image_url} alt={product.name} className="prod-thumb" />
-                                ) : (
-                                    <div className="prod-thumb prod-thumb--empty"><span>foto</span></div>
-                                )}
-                                <div className="prod-body">
-                                    <div className="prod-name">{product.name}</div>
-                                    <div className="prod-foot">
-                                        <span className="prod-price">{product.price} ₺</span>
-                                        {qty > 0 ? (
-                                            <div className="stepper">
-                                                <button onClick={() => removeFromCart(product.id)} className="qty-btn" aria-label={`${product.name} adedini azalt`}><IconMinus size={ICON.sm} /></button>
-                                                <span className="qty-num">{qty}</span>
-                                                <button onClick={() => addToCart(product)} className="qty-btn qty-btn--inc" aria-label={`${product.name} adedini artır`}><IconPlus size={ICON.sm} /></button>
-                                            </div>
-                                        ) : (
-                                            <button onClick={() => addToCart(product)} className="btn btn-success btn-sm"><IconPlus size={ICON.xs} />Ekle</button>
-                                        )}
+                <section
+                    key={category.id}
+                    id={sectionId(category.id)}
+                    className="menu-section reveal"
+                    style={{ '--i': ci }}
+                >
+                    <h2 className="section-label">{category.name}</h2>
+                    <div className="group-card">
+                        {category.products.map((product) => {
+                            const qty = getItemQuantity(product.id);
+                            return (
+                                <div key={product.id} className="menu-row">
+                                    {product.image_url ? (
+                                        <img src={product.image_url} alt="" className="row-thumb" loading="lazy" />
+                                    ) : (
+                                        // Fotoğrafsız ürün: "foto" yazan gri kutu yerine ürünün
+                                        // baş harfi. Hizayı bozmadan boşluğu kasıtlı gösterir.
+                                        <div className="row-mono" aria-hidden="true">{product.name.trim().charAt(0).toLocaleUpperCase('tr-TR')}</div>
+                                    )}
+                                    <div className="row-body">
+                                        <div className="row-name">{product.name}</div>
+                                        <div className="row-price">{product.price} ₺</div>
                                     </div>
+                                    {qty > 0 ? (
+                                        <div className="stepper">
+                                            <button onClick={() => removeFromCart(product.id)} className="qty-btn" aria-label={`${product.name} adedini azalt`}><IconMinus size={ICON.sm} /></button>
+                                            <span className="qty-num">{qty}</span>
+                                            <button onClick={() => addToCart(product)} className="qty-btn qty-btn--inc" aria-label={`${product.name} adedini artır`}><IconPlus size={ICON.sm} /></button>
+                                        </div>
+                                    ) : (
+                                        <button onClick={() => addToCart(product)} className="row-add" aria-label={`${product.name} ekle`}><IconPlus size={ICON.sm} /></button>
+                                    )}
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </section>
             ))}
 
