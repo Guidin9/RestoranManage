@@ -1,8 +1,11 @@
 /* =========================================================================
-   RestoranManage — "Mavi Liman" Tasarım Sistemi
-   Claude Design'dan içe aktarılan Akdeniz teması: adaçayı-su yeşili zemin,
-   derin petrol lacivert panel başlıkları (Marcellus serif), deniz mavisi ve
-   zeytin yeşili aksanlar, terakota uyarılar. Gövde yazısı Hanken Grotesk.
+   RestoranManage — "Kor" Tasarım Sistemi
+   Sıcak kömür + kavrulmuş turuncu: krem yüzeyler, kömür grisi metin, tek
+   doygun aksan (turuncu). Yeşil onay, sarı uyarı, kırmızı tehlike yalnızca
+   semantik iş görür — dekoratif renk yok.
+   TEK YAZI AİLESİ: Inter. Hiyerarşi ağırlık ve boyutla kurulur, dekoratif
+   bir başlık yüzü yoktur (2026-08-07'de Marcellus + Hanken Grotesk ikilisi
+   ve "Mavi Liman" Akdeniz paleti kullanıcı isteğiyle bırakıldı).
    Tüm ekranlar (müşteri / garson / kasa / yönetici) bu sistemi paylaşır.
    Görünüm burada; ekran JSX'leri yalnızca className kullanır.
 
@@ -29,58 +32,62 @@
    kendi @layer theme default'larını yener (rounded-md → 16px, ease-out →
    bizim eğrimiz) ve var(--x) kullanan ~120 kural hiç değişmeden çalışır. */
 :root {
-  /* Mürekkep (metin) tonları */
-  --ink: #123240;
-  --ink-dim: rgba(18, 50, 64, 0.55);
-  --ink-faint: rgba(18, 50, 64, 0.4);
+  /* Mürekkep (metin) tonları — sıcak kömür */
+  --ink: #1c1917;
+  --ink-dim: rgba(28, 25, 23, 0.58);
+  --ink-faint: rgba(28, 25, 23, 0.42);
 
-  /* Aksan renkleri */
-  --sea: #12688a;
-  --sea-deep: #0d4d68;
-  --olive: #6f8a52;
-  --olive-deep: #5c7444;
-  --olive-light: #8fb37a;
-  --terra: #c05f50;
-  --warn: #d3a256;
+  /* Semantik renkler. İSİMLER ROLE GÖRE, tona göre değil: paleti bir daha
+     değiştirdiğimizde yalnız buradaki değerler döner, --accent'in turuncu
+     mu yeşil mi olduğu hiçbir kuralı ilgilendirmez. */
+  --accent: #c2410c;                /* marka + birincil eylem */
+  --accent-deep: #9a3412;           /* yalnız hover dolgusu */
+  --ok: #15803d;                    /* onay, servis edildi */
+  --ok-deep: #166534;
+  --ok-light: #4ade80;
+  --danger: #b91c1c;                /* sil, iptal */
+  /* Sarıya çekik: --accent turuncu olduğu için amber ona fazla yakın
+     kalıyordu, "Hazırlanıyor" ile "Servise hazır" ayırt edilemiyordu. */
+  --warn: #a16207;
 
   /* Yüzeyler */
-  --paper: #ffffff;
-  --paper-soft: #fbfcfa;
-  --sand: #eef2e6;
-  --mist: #f7f9f4;
-  --line: rgba(18, 50, 64, 0.1);
-  --line-strong: rgba(18, 50, 64, 0.16);
-  --line-hair: rgba(18, 50, 64, 0.08);
-  --line-soft: rgba(18, 50, 64, 0.06);
-  --deep-grad: linear-gradient(160deg, #1a4759, #123240);
+  --paper: #fffbf5;
+  --paper-soft: #fdf8f1;
+  --sand: #f0e7da;
+  --mist: #faf6f0;
+  --line: rgba(28, 25, 23, 0.1);
+  --line-strong: rgba(28, 25, 23, 0.17);
+  --line-hair: rgba(28, 25, 23, 0.08);
+  --line-soft: rgba(28, 25, 23, 0.06);
+  --deep-grad: linear-gradient(160deg, #2c2523, #1c1917);
   /* .btn-ink hover dolgusu. .btn-ink tersine çevrilmiş bir butondur
      (zemin --ink, yazı --paper), yani bu değer karanlıkta --ink'ten DAHA
      AÇIK olmalı — yoksa yazı okunmaz hâle gelir. */
-  --ink-lift: #1a4759;
-  --page-grad: linear-gradient(180deg, #d7e5e0 0%, #eef2e6 58%);
-  --placeholder: #d3ddd2;           /* fotoğrafsız ürün görseli zemini */
+  --ink-lift: #2c2523;
+  --page-grad: linear-gradient(180deg, #f5efe6 0%, #faf6f0 58%);
+  --placeholder: #e7dccc;           /* fotoğrafsız ürün görseli zemini */
 
   /* Aksan tint'leri — arka plan + ÜSTÜNDEKİ metin, semantik çift halinde.
-     Beyaz üstü %15 zeytin ile koyu zemin üstü %15 zeytin aynı renk değil;
+     Krem üstü %13 turuncu ile koyu zemin üstü %13 turuncu aynı renk değil;
      metin rengi de karanlıkta ters yöne gitmek zorunda. Bu yüzden çift. */
-  --tint-olive: rgba(111, 138, 82, 0.15);
-  --tint-olive-ink: #5c7444;
-  --tint-sea: rgba(18, 104, 138, 0.13);
-  --tint-sea-ink: #0d4d68;
-  --tint-warn: rgba(211, 162, 86, 0.18);
-  --tint-warn-ink: #8a5e18;
-  --tint-terra: rgba(192, 95, 80, 0.1);
-  --tint-terra-ink: #a34537;
+  --tint-ok: rgba(21, 128, 61, 0.13);
+  --tint-ok-ink: #166534;
+  --tint-accent: rgba(194, 65, 12, 0.12);
+  --tint-accent-ink: #9a3412;
+  --tint-warn: rgba(161, 98, 7, 0.15);
+  --tint-warn-ink: #854d0e;
+  --tint-danger: rgba(185, 28, 28, 0.1);
+  --tint-danger-ink: #991b1b;
 
   /* Materyaller (bkz. "Materyal ve derinlik") */
-  --glass: rgba(255, 255, 255, 0.72);
-  --glass-edge: rgba(255, 255, 255, 0.75);
-  --glass-top: rgba(255, 255, 255, 0.9);   /* materyale çarpan ışık, üst kenar */
-  --glass-deep: rgba(18, 50, 64, 0.92);
-  --scrim: rgba(18, 50, 64, 0.55);
+  --glass: rgba(255, 251, 245, 0.72);
+  --glass-edge: rgba(255, 255, 255, 0.78);
+  --glass-top: rgba(255, 255, 255, 0.92);  /* materyale çarpan ışık, üst kenar */
+  --glass-deep: rgba(28, 25, 23, 0.92);
+  --scrim: rgba(28, 25, 23, 0.55);
   /* Saydamlık kapalıyken cam yüzeylerin opak karşılığı. --ink KULLANILAMAZ:
      karanlıkta --ink açık renge dönüyor, sepet çubuğu beyazlardı. */
-  --surface-deep: #16323f;
+  --surface-deep: #241f1d;
 
   /* Tailwind'in --radius-* namespace'iyle aynı isimler: rounded-lg/md/sm
      utility'leri bu değerlere çözülür. (Eskiden --radius idi; TW'nin
@@ -92,16 +99,18 @@
 
   /* Derinlik ölçeği — dört basamak. Büyük yüzey daha kalın okunur:
      head < card < panel < float. Eskiden dokuz ayrı bespoke gölge vardı. */
-  --shadow-head: 0 16px 30px -18px rgba(18, 50, 64, 0.6);
-  --shadow-card: 0 12px 30px -22px rgba(18, 50, 64, 0.5);
-  --shadow-panel: 0 26px 60px -34px rgba(18, 50, 64, 0.5);
-  --shadow-float: 0 22px 44px -16px rgba(18, 50, 64, 0.85);
+  --shadow-head: 0 16px 30px -18px rgba(28, 25, 23, 0.5);
+  --shadow-card: 0 12px 30px -22px rgba(28, 25, 23, 0.42);
+  --shadow-panel: 0 26px 60px -34px rgba(28, 25, 23, 0.42);
+  --shadow-float: 0 22px 44px -16px rgba(28, 25, 23, 0.7);
   /* Karanlıkta iç üst parlaklığa dönüşür. Açıkta "none" YAZILAMAZ —
      none bir box-shadow listesinin parçası olamaz, kural tümden düşer. */
   --shadow-inset: inset 0 0 0 0 transparent;
 
-  --sans: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --serif: 'Marcellus', 'Georgia', serif;
+  /* Tek aile. --serif KALDIRILDI: ayrı bir başlık yüzü yok, başlıklar aynı
+     aileden ağırlıkla ayrışıyor. Geri eklemek istersen @theme inline'daki
+     --font-serif köprüsünü de geri koyman gerekir. */
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -126,6 +135,9 @@
 
   color-scheme: light dark;
   font-family: var(--sans);
+  /* Inter'in opsz ekseni: büyük boyutta sıkışır, küçükte açılır. Tek aileyle
+     çalışırken hiyerarşiyi taşıyan detaylardan biri bu. */
+  font-optical-sizing: auto;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -144,46 +156,48 @@
    light-dark() daha kısa olurdu ama Chrome 123 / Safari 17.5 ister;
    tabanımız iOS 16.4 / Chrome 111. Bu yüzden media query.
 
-   Koyu zemin üstündeki kabuk paleti (#eef4f2, #fff, #c3d6b0, #e8a99e ...)
+   Koyu zemin üstündeki kabuk paleti (#f7f2ee, #fff, #86efac, #fca5a5 ...)
    zaten --deep-grad üzerinde yaşıyor ve iki temada da doğru — panel/login
    başlıkları, modal başlığı ve sepet çubuğu için burada renk işi YOK.
    Düzeltmeye çalışma. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #dce7eb;
-    --ink-dim: rgba(220, 231, 235, 0.62);
-    --ink-faint: rgba(220, 231, 235, 0.42);
+    --ink: #ede7e1;
+    --ink-dim: rgba(237, 231, 225, 0.62);
+    --ink-faint: rgba(237, 231, 225, 0.42);
 
-    --sea: #3f9dc2;
-    --sea-deep: #1a80a8;          /* artık yalnız hover dolgusu → daha AÇIK */
-    --olive: #7d9b5c;
-    --olive-deep: #8fae6b;        /* aynı şekilde hover dolgusu */
-    --olive-light: #a9c98e;
-    --terra: #d97f6e;
-    --warn: #e0b473;
+    /* Doygun turuncu koyu zeminde göz alıyor ve kontrastı düşük kalıyor:
+       karanlıkta bir basamak açılıp yumuşuyor. */
+    --accent: #fb923c;
+    --accent-deep: #fdba74;       /* artık yalnız hover dolgusu → daha AÇIK */
+    --ok: #4ade80;
+    --ok-deep: #86efac;           /* aynı şekilde hover dolgusu */
+    --ok-light: #bbf7d0;
+    --danger: #f87171;
+    --warn: #fbbf24;
 
-    --paper: #122a35;
-    --paper-soft: #0f242e;
-    --sand: #17323e;
-    --mist: #142d38;
-    --line: rgba(220, 231, 235, 0.13);
-    --line-strong: rgba(220, 231, 235, 0.22);
-    --line-hair: rgba(220, 231, 235, 0.1);
-    --line-soft: rgba(220, 231, 235, 0.08);
+    --paper: #221d1b;
+    --paper-soft: #1e1917;
+    --sand: #2c2624;
+    --mist: #241f1d;
+    --line: rgba(237, 231, 225, 0.13);
+    --line-strong: rgba(237, 231, 225, 0.22);
+    --line-hair: rgba(237, 231, 225, 0.1);
+    --line-soft: rgba(237, 231, 225, 0.08);
     /* Kabuk kimliği kalır ama sayfadan DAHA AÇIK olmalı ki yükseltilmiş okunsun */
-    --deep-grad: linear-gradient(160deg, #1e5266, #143a4b);
-    --ink-lift: #f0f7f9;          /* --ink'ten açık: .btn-ink ters buton */
-    --page-grad: linear-gradient(180deg, #0c1f28 0%, #081a22 58%);
-    --placeholder: #1b3542;
+    --deep-grad: linear-gradient(160deg, #362e2b, #2a2422);
+    --ink-lift: #f7f2ee;          /* --ink'ten açık: .btn-ink ters buton */
+    --page-grad: linear-gradient(180deg, #14100e 0%, #0f0c0b 58%);
+    --placeholder: #332c29;
 
-    --tint-olive: rgba(143, 179, 122, 0.18);
-    --tint-olive-ink: #a9c98e;
-    --tint-sea: rgba(63, 157, 194, 0.18);
-    --tint-sea-ink: #7fc2de;
-    --tint-warn: rgba(224, 180, 115, 0.2);
-    --tint-warn-ink: #e6c58c;
-    --tint-terra: rgba(217, 127, 110, 0.16);
-    --tint-terra-ink: #eda593;
+    --tint-ok: rgba(74, 222, 128, 0.16);
+    --tint-ok-ink: #86efac;
+    --tint-accent: rgba(251, 146, 60, 0.18);
+    --tint-accent-ink: #fdba74;
+    --tint-warn: rgba(251, 191, 36, 0.18);
+    --tint-warn-ink: #fcd34d;
+    --tint-danger: rgba(248, 113, 113, 0.16);
+    --tint-danger-ink: #fca5a5;
 
     --glass: rgba(255, 255, 255, 0.055);
     --glass-edge: rgba(255, 255, 255, 0.1);
@@ -191,9 +205,9 @@
     /* Sepet çubuğu karanlıkta sayfadan DAHA AÇIK olmalı — --deep-grad ile
        aynı gerekçe. Sayfa zemininden koyu bir cam geriye kaçar, yüzen bir
        katman gibi okunmaz ve altındaki yazılar camdan sızar. */
-    --glass-deep: rgba(30, 64, 80, 0.9);
-    --scrim: rgba(3, 10, 14, 0.7);
-    --surface-deep: #1c3f4f;
+    --glass-deep: rgba(52, 44, 41, 0.9);
+    --scrim: rgba(10, 7, 6, 0.7);
+    --surface-deep: #2a2422;
 
     /* Neredeyse siyah sayfada mürekkep tonlu gölge görünmez: saf siyah,
        yüksek alfa, sığ yayılım — ve kaybolan kontrast yerine iç üst parlaklık. */
@@ -221,7 +235,7 @@
 }
 
 /* Paleti kilitle: Tailwind'in 22 hazır renk rampasını (blue-500, red-400 ...)
-   tamamen kaldırır. Mavi Liman dışında bir renk yazmak artık derlenmez —
+   tamamen kaldırır. Kor paleti dışında bir renk yazmak artık derlenmez —
    "palet değişmesin" bir niyet değil, kısıt. Bundle'dan da ~20KB düşer. */
 @theme {
   --color-*: initial;
@@ -238,19 +252,19 @@
 
 /* Token köprüsü — :root'u Tailwind'in namespace'ine bağlar, böylece
    bg-sea / text-ink / font-serif gibi utility'ler üretilir.
-   'inline' kritik: bg-sea doğrudan var(--sea)'ye çözülür, ayrı bir
-   --color-sea değişkeni HİÇ üretilmez. Yani tek kaynak :root kalır,
+   'inline' kritik: bg-sea doğrudan var(--accent)'ye çözülür, ayrı bir
+   --color-accent değişkeni HİÇ üretilmez. Yani tek kaynak :root kalır,
    iki isim/iki değer ikilemi ve drift riski oluşmaz. */
 @theme inline {
   --color-ink: var(--ink);
   --color-ink-dim: var(--ink-dim);
   --color-ink-faint: var(--ink-faint);
-  --color-sea: var(--sea);
-  --color-sea-deep: var(--sea-deep);
-  --color-olive: var(--olive);
-  --color-olive-deep: var(--olive-deep);
-  --color-olive-light: var(--olive-light);
-  --color-terra: var(--terra);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-ok: var(--ok);
+  --color-ok-deep: var(--ok-deep);
+  --color-ok-light: var(--ok-light);
+  --color-danger: var(--danger);
   --color-warn: var(--warn);
   --color-paper: var(--paper);
   --color-paper-soft: var(--paper-soft);
@@ -263,14 +277,14 @@
   --color-ink-lift: var(--ink-lift);
   --color-placeholder: var(--placeholder);
 
-  --color-tint-olive: var(--tint-olive);
-  --color-tint-olive-ink: var(--tint-olive-ink);
-  --color-tint-sea: var(--tint-sea);
-  --color-tint-sea-ink: var(--tint-sea-ink);
+  --color-tint-olive: var(--tint-ok);
+  --color-tint-olive-ink: var(--tint-ok-ink);
+  --color-tint-sea: var(--tint-accent);
+  --color-tint-sea-ink: var(--tint-accent-ink);
   --color-tint-warn: var(--tint-warn);
   --color-tint-warn-ink: var(--tint-warn-ink);
-  --color-tint-terra: var(--tint-terra);
-  --color-tint-terra-ink: var(--tint-terra-ink);
+  --color-tint-terra: var(--tint-danger);
+  --color-tint-terra-ink: var(--tint-danger-ink);
 
   --color-glass: var(--glass);
   --color-glass-edge: var(--glass-edge);
@@ -279,7 +293,6 @@
   --color-scrim: var(--scrim);
 
   --font-sans: var(--sans);
-  --font-serif: var(--serif);
 }
 
 @layer base {
@@ -296,15 +309,15 @@
   }
 
   h1, h2, h3, h4, h5 {
-    font-family: var(--serif);
-    font-weight: 400;
+    font-family: var(--sans);
+    font-weight: 700;
     color: var(--ink);
     line-height: var(--lead-title);
     letter-spacing: var(--track-title);
     margin: 0;
   }
   p { margin: 0; line-height: var(--lead-body); }
-  a { color: var(--sea); text-decoration: none; }
+  a { color: var(--accent); text-decoration: none; }
   svg { display: block; }
 
   /* Dokunma cevabı. touch-action: manipulation, iOS'un çift dokunma
@@ -391,7 +404,7 @@
 .panel-head {
   padding: 20px 24px;
   background: var(--deep-grad);
-  color: #eef4f2;
+  color: #f7f2ee;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -406,8 +419,8 @@
   display: flex; align-items: center; justify-content: center;
   flex: none;
 }
-.panel-title { font: 400 21px/1.15 var(--serif); }
-.panel-sub { font: 400 11px/1.3 var(--sans); color: rgba(238, 244, 242, 0.6); margin-top: 5px; }
+.panel-title { font: 700 21px/1.15 var(--sans); }
+.panel-sub { font: 400 11px/1.3 var(--sans); color: rgba(247, 242, 238, 0.6); margin-top: 5px; }
 .panel-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .panel-body { padding: 24px; }
 
@@ -419,12 +432,12 @@
   border-radius: 999px;
   padding: 6px 12px;
   font: 600 11px/1 var(--sans);
-  color: #c3d6b0;
+  color: #86efac;
 }
 .dot-live {
   width: 7px; height: 7px; border-radius: 999px;
-  background: var(--olive-light);
-  animation: ml-pulse 1.6s ease-in-out infinite;
+  background: var(--ok-light);
+  animation: kor-pulse 1.6s ease-in-out infinite;
 }
 
 /* =========================================================================
@@ -449,20 +462,20 @@
   transition: transform 0.18s var(--ease-out), background 0.2s ease,
               color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.btn:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .btn-primary {
-  background: var(--sea); color: #fff; border-color: transparent;
+  background: var(--accent); color: #fff; border-color: transparent;
   box-shadow: 0 10px 20px -8px rgba(18, 104, 138, 0.6);
 }
 .btn-success {
-  background: var(--olive); color: #fff; border-color: transparent;
+  background: var(--ok); color: #fff; border-color: transparent;
   box-shadow: 0 10px 20px -8px rgba(111, 138, 82, 0.8);
 }
 
 /* Tasarımda silme eylemleri terakota konturlu, hover'da dolar */
 .btn-danger {
-  background: transparent; color: var(--terra);
+  background: transparent; color: var(--danger);
   border-color: rgba(192, 95, 80, 0.4);
 }
 
@@ -472,14 +485,14 @@
 .btn-logout {
   background: rgba(192, 95, 80, 0.18);
   border-color: rgba(192, 95, 80, 0.4);
-  color: #e8a99e;
+  color: #fca5a5;
 }
 
 /* Yalnızca metin görünümlü silme butonu (satır içi) */
 .btn-text-danger {
   display: inline-flex; align-items: center; gap: 4px;
   background: transparent; border: none;
-  color: var(--terra);
+  color: var(--danger);
   font: 600 12px/1 var(--sans);
   cursor: pointer;
   min-height: 44px;
@@ -527,8 +540,8 @@
 }
 .input::placeholder { color: var(--ink-faint); }
 .input:focus, .select:focus {
-  border-color: var(--sea);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sea) 22%, transparent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .select option { color: var(--ink); }
 input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; color: var(--ink-dim); }
@@ -572,23 +585,23 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .login-head {
   padding: 34px 30px 26px;
   background: var(--deep-grad);
-  color: #eef4f2;
+  color: #f7f2ee;
   text-align: center;
 }
-.login-head h2 { font: 400 24px/1.1 var(--serif); color: #eef4f2; }
-.login-sub { font: 400 12px/1.5 var(--sans); color: rgba(238, 244, 242, 0.6); margin-top: 8px; }
+.login-head h2 { font: 700 24px/1.1 var(--sans); color: #f7f2ee; }
+.login-sub { font: 400 12px/1.5 var(--sans); color: rgba(247, 242, 238, 0.6); margin-top: 8px; }
 .login-body { padding: 26px 30px 30px; }
 
 /* Kemer motifi — marka/rol baş harfi */
 .login-arch {
   width: 54px; height: 54px;
   border-radius: 0 0 999px 999px;
-  border: 1.6px solid rgba(238, 244, 242, 0.5);
+  border: 1.6px solid rgba(247, 242, 238, 0.5);
   border-top: none;
   display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: 8px;
   margin: 0 auto 16px;
-  font: 400 20px/1 var(--serif);
+  font: 700 20px/1 var(--sans);
 }
 
 .alert {
@@ -597,9 +610,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   font: 500 13px/1.4 var(--sans);
   text-align: center;
   margin-bottom: 16px;
-  color: var(--tint-terra-ink);
-  background: var(--tint-terra);
-  border: 1px solid color-mix(in srgb, var(--terra) 34%, transparent);
+  color: var(--tint-danger-ink);
+  background: var(--tint-danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
   animation: shake 0.4s ease;
 }
 
@@ -626,7 +639,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
-.tab.active { color: var(--ink); font-weight: 700; border-bottom-color: var(--sea); }
+.tab.active { color: var(--ink); font-weight: 700; border-bottom-color: var(--accent); }
 
 /* =========================================================================
    Boş durum
@@ -639,9 +652,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   background: var(--sand);
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 16px;
-  color: var(--olive);
+  color: var(--ok);
 }
-.empty h3 { font: 400 20px/1.2 var(--serif); color: var(--ink); }
+.empty h3 { font: 700 20px/1.2 var(--sans); color: var(--ink); }
 .empty p { font: 400 13px/1.5 var(--sans); color: var(--ink-dim); margin-top: 8px; }
 
 /* =========================================================================
@@ -700,7 +713,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font: 400 17px/1.15 var(--serif);
+  font: 600 17px/1.15 var(--sans);
   color: var(--ink);
   opacity: 0;
   transform: translateY(7px);
@@ -714,8 +727,8 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   height: 30px;
   padding: 0 12px;
   border-radius: 999px;
-  background: var(--tint-sea);
-  color: var(--tint-sea-ink);
+  background: var(--tint-accent);
+  color: var(--tint-accent-ink);
   font: 700 12px/1 var(--sans);
   font-variant-numeric: tabular-nums;
 }
@@ -750,7 +763,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 /* Görsel kutu 32px kalıyor, dokunma alanı 44px'e çıkıyor */
 .cat-pill::after { content: ''; position: absolute; inset: -6px -2px; }
 .cat-pill.is-active {
-  background: var(--sea);
+  background: var(--accent);
   border-color: transparent;
   color: #fff;
 }
@@ -766,7 +779,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   color: var(--ink-faint);
 }
 .menu-brand {
-  font: 400 clamp(30px, 8.4vw, 38px)/var(--lead-display) var(--serif);
+  font: 700 clamp(30px, 8.4vw, 38px)/var(--lead-display) var(--sans);
   color: var(--ink);
   margin-top: 8px;
 }
@@ -809,7 +822,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   text-transform: uppercase;
   color: var(--ink-dim);
 }
-.tab-total-value { font: 400 24px/1 var(--serif); color: var(--ink); }
+.tab-total-value { font: 700 24px/1 var(--sans); color: var(--ink); }
 
 .tab-items { list-style: none; margin: 0; padding: 0; }
 .tab-item {
@@ -826,7 +839,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   height: 1px;
   background: var(--line-hair);
 }
-.tab-item-qty { font: 700 12px/1 var(--sans); color: var(--olive); min-width: 24px; }
+.tab-item-qty { font: 700 12px/1 var(--sans); color: var(--accent); min-width: 24px; }
 .tab-item-name { flex: 1; font: 600 13px/1.2 var(--sans); color: var(--ink); min-width: 0; }
 .tab-item-price { font: 600 13px/1 var(--sans); color: var(--ink); min-width: 64px; text-align: right; }
 
@@ -838,9 +851,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 999px;
   white-space: nowrap;
 }
-.status-tag--ok { background: var(--tint-olive); color: var(--tint-olive-ink); }
+.status-tag--ok { background: var(--tint-ok); color: var(--tint-ok-ink); }
 .status-tag--wait { background: var(--tint-warn); color: var(--tint-warn-ink); }
-.status-tag--ready { background: var(--tint-sea); color: var(--tint-sea-ink); }
+.status-tag--ready { background: var(--tint-accent); color: var(--tint-accent-ink); }
 
 /* -------------------------------------------------------------------------
    Gruplu liste — kategori başına tek yüzey, satırlar saç teli ayıraçla
@@ -907,9 +920,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 13px;
   flex: none;
   display: flex; align-items: center; justify-content: center;
-  background: var(--tint-sea);
-  color: var(--tint-sea-ink);
-  font: 400 20px/1 var(--serif);
+  background: var(--tint-accent);
+  color: var(--tint-accent-ink);
+  font: 700 20px/1 var(--sans);
 }
 .thumb-sm--empty {
   background-color: var(--placeholder);
@@ -926,14 +939,17 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .row-name { font: 600 15px/1.25 var(--sans); color: var(--ink); }
 .row-price { font: 600 13px/1 var(--sans); color: var(--ink-dim); margin-top: 5px; }
 
-/* Ekle — 32px daire, dokunma alanı ::after ile 44px */
+/* Ekle — 32px daire, dokunma alanı ::after ile 44px.
+   Rengi --accent, --ok DEĞİL: turuncu birincil eylemi, yeşil ise
+   tamamlanmış/onaylanmış durumu (Sepeti Onayla, "Servis edildi") gösterir.
+   İkisini karıştırmak "ekle" ile "bitti"yi aynı renge sokar. */
 .row-add {
   position: relative;
   flex: none;
   width: 32px; height: 32px;
   border: none;
   border-radius: 999px;
-  background: var(--olive);
+  background: var(--accent);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
@@ -963,7 +979,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   transition: background 0.15s ease, transform 0.15s var(--ease-out);
 }
 .qty-btn::after { content: ''; position: absolute; inset: -9px -5px; }
-.qty-btn--inc { background: var(--olive); color: #fff; }
+.qty-btn--inc { background: var(--accent); color: #fff; }
 .qty-num { font: 700 13px/1 var(--sans); color: var(--ink); min-width: 16px; text-align: center; }
 
 /* Sepet — koyu ağır materyal, açık içeriğin üstünde. Yapısal olarak doğru:
@@ -985,7 +1001,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 20px;
   padding: 14px;
   box-shadow: var(--shadow-float);
-  color: #eef4f2;
+  color: #f7f2ee;
 }
 
 /* Sürükleme tutamacı — touch-action:none olan TEK eleman; listenin kendisi
@@ -1010,12 +1026,12 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.32);
 }
-.sheet-grip:focus-visible { outline: 2px solid var(--olive-light); outline-offset: 2px; border-radius: 8px; }
+.sheet-grip:focus-visible { outline: 2px solid var(--ok-light); outline-offset: 2px; border-radius: 8px; }
 .cart-top { display: flex; align-items: center; gap: 11px; margin-bottom: 11px; }
 .cart-bag { position: relative; color: #fff; flex: none; }
 .cart-count {
   position: absolute; top: -6px; right: -7px;
-  background: var(--olive); color: #fff;
+  background: var(--ok); color: #fff;
   font: 700 9px/1 var(--sans);
   border-radius: 999px;
   min-width: 15px; height: 15px;
@@ -1052,11 +1068,11 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   display: flex; flex-direction: column; gap: 7px;
 }
 .cart-line { display: flex; align-items: center; gap: 8px; }
-.cart-qty { font: 700 11px/1 var(--sans); color: var(--olive-light); min-width: 24px; }
+.cart-qty { font: 700 11px/1 var(--sans); color: var(--ok-light); min-width: 24px; }
 .cart-name {
   flex: 1;
   font: 400 12px/1.2 var(--sans);
-  color: rgba(238, 244, 242, 0.9);
+  color: rgba(247, 242, 238, 0.9);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .cart-price { font: 600 12px/1 var(--sans); color: #fff; }
@@ -1092,13 +1108,13 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .confirm-icon {
   width: 64px; height: 64px;
   border-radius: 999px;
-  background: var(--olive);
+  background: var(--ok);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 16px;
 }
-.confirm-icon--soft { background: var(--sand); color: var(--sea); width: 60px; height: 60px; }
-.confirm-title { font: 400 24px/1.1 var(--serif); color: var(--ink); }
+.confirm-icon--soft { background: var(--sand); color: var(--accent); width: 60px; height: 60px; }
+.confirm-title { font: 700 24px/1.1 var(--sans); color: var(--ink); }
 .confirm-sub { font: 400 13px/1.5 var(--sans); color: var(--ink-dim); margin-top: 8px; }
 
 /* =========================================================================
@@ -1116,18 +1132,18 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 /* color-mix ile: sıfır yeni token, karanlık modu bedava takip eder */
-.table-card--free { background: color-mix(in srgb, var(--olive) 7%, var(--paper)); border-color: color-mix(in srgb, var(--olive) 28%, transparent); }
-.table-card--busy { background: color-mix(in srgb, var(--terra) 6%, var(--paper)); border-color: color-mix(in srgb, var(--terra) 25%, transparent); }
+.table-card--free { background: color-mix(in srgb, var(--ok) 7%, var(--paper)); border-color: color-mix(in srgb, var(--ok) 28%, transparent); }
+.table-card--busy { background: color-mix(in srgb, var(--danger) 6%, var(--paper)); border-color: color-mix(in srgb, var(--danger) 25%, transparent); }
 
-.table-name { font: 400 20px/1 var(--serif); color: var(--ink); }
+.table-name { font: 700 20px/1 var(--sans); color: var(--ink); }
 .table-status {
   font: 700 9px/1 var(--sans);
   letter-spacing: var(--track-caps);
   padding: 5px 9px;
   border-radius: 999px;
 }
-.table-status--free { background: var(--tint-olive); color: var(--tint-olive-ink); }
-.table-status--busy { background: var(--tint-terra); color: var(--tint-terra-ink); }
+.table-status--free { background: var(--tint-ok); color: var(--tint-ok-ink); }
+.table-status--busy { background: var(--tint-danger); color: var(--tint-danger-ink); }
 .table-meta { font: 500 12px/1.4 var(--sans); margin-top: 14px; }
 .table-card--free .table-meta { color: var(--ink-faint); }
 .table-card--busy .table-meta { color: var(--ink-dim); }
@@ -1167,7 +1183,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .dot-pending {
   width: 7px; height: 7px; border-radius: 999px;
   background: var(--warn);
-  animation: ml-pulse 1.4s ease-in-out infinite;
+  animation: kor-pulse 1.4s ease-in-out infinite;
 }
 
 /* Bekleyen kalem/kart vurgusu */
@@ -1179,7 +1195,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .order-deliver {
   width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--olive);
+  background: var(--ok);
   color: #fff;
   border: none;
   padding: 12px;
@@ -1192,7 +1208,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .order-prepare {
   width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--sea);
+  background: var(--accent);
   color: #fff;
   border: none;
   padding: 12px;
@@ -1228,18 +1244,18 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   position: sticky; top: 0; z-index: 2;
   padding: 18px 22px;
   background: var(--deep-grad);
-  color: #eef4f2;
+  color: #f7f2ee;
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px;
 }
-.modal-title { font: 400 22px/1 var(--serif); }
+.modal-title { font: 700 22px/1 var(--sans); }
 .modal-close {
   position: relative;
   width: 34px; height: 34px;
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.12);
   border: none;
-  color: #eef4f2;
+  color: #f7f2ee;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   flex: none;
@@ -1254,8 +1270,8 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   margin: 0 0 12px;
   display: flex; align-items: center; gap: 8px;
 }
-.section-title svg { color: var(--sea); }
-.section-title--add svg { color: var(--olive); }
+.section-title svg { color: var(--accent); }
+.section-title--add svg { color: var(--ok); }
 .section-label { font: 600 12px/1 var(--sans); color: var(--ink-dim); margin: 14px 0 9px; }
 
 /* Adisyon satırı */
@@ -1266,7 +1282,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-radius: 12px;
   padding: 10px 13px;
 }
-.line-qty { font: 700 13px/1 var(--sans); color: var(--olive); min-width: 26px; }
+.line-qty { font: 700 13px/1 var(--sans); color: var(--ok); min-width: 26px; }
 .line-name { flex: 1; font: 600 14px/1.2 var(--sans); color: var(--ink); }
 .line-price { font: 600 13px/1 var(--sans); color: var(--ink-dim); }
 .total-row {
@@ -1308,14 +1324,14 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   padding: 16px;
   border-radius: var(--radius-md);
   background: var(--mist);
-  border: 1px solid color-mix(in srgb, var(--olive) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent);
   box-shadow: var(--shadow-inset);
 }
 .pending-cart-head { display: flex; align-items: center; gap: 11px; }
-.pending-cart-head .cart-bag { color: var(--olive); }
-.pending-cart-head .cart-count { background: var(--olive); }
+.pending-cart-head .cart-bag { color: var(--ok); }
+.pending-cart-head .cart-count { background: var(--ok); }
 .pending-cart-title { flex: 1; font: 700 13px/1 var(--sans); color: var(--ink); }
-.pending-cart-total { font: 700 15px/1 var(--sans); color: var(--tint-olive-ink); }
+.pending-cart-total { font: 700 15px/1 var(--sans); color: var(--tint-ok-ink); }
 .pending-line {
   display: flex; align-items: center; gap: 11px;
   background: var(--paper);
@@ -1344,7 +1360,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   background: var(--sand);
   border-bottom: 1px solid var(--line-hair);
 }
-.order-table { font: 400 20px/1 var(--serif); color: var(--ink); }
+.order-table { font: 700 20px/1 var(--sans); color: var(--ink); }
 .order-time { font: 500 11px/1 var(--sans); color: var(--ink-dim); }
 .order-lines {
   list-style: none; margin: 0;
@@ -1366,7 +1382,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .order-pay {
   width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--sea);
+  background: var(--accent);
   color: #fff;
   border: none;
   padding: 14px;
@@ -1410,8 +1426,8 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   text-transform: uppercase;
   color: var(--ink-dim);
 }
-.kpi-value { font: 400 28px/1 var(--serif); color: var(--ink); }
-.kpi--accent .kpi-label { color: rgba(238, 244, 242, 0.6); }
+.kpi-value { font: 700 28px/1 var(--sans); color: var(--ink); }
+.kpi--accent .kpi-label { color: rgba(247, 242, 238, 0.6); }
 .kpi--accent .kpi-value { color: #fff; }
 
 .context-grid {
@@ -1428,7 +1444,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .ctx-title {
   display: block;
-  font: 400 16px/1 var(--serif);
+  font: 700 16px/1 var(--sans);
   color: var(--ink);
   margin-bottom: 12px;
 }
@@ -1459,7 +1475,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   color: var(--ink);
   margin-bottom: 16px;
 }
-.chart-title svg { color: var(--sea); }
+.chart-title svg { color: var(--accent); }
 .chart-empty {
   padding: 34px 20px;
   text-align: center;
@@ -1481,7 +1497,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .pbar-fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--olive);
+  background: var(--ok);
   min-width: 4px;
   transition: width 0.5s var(--ease-out);
 }
@@ -1505,7 +1521,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   width: 38px; height: 38px;
   border-radius: 999px;
   background: var(--sand);
-  color: var(--sea);
+  color: var(--accent);
   display: flex; align-items: center; justify-content: center;
   flex: none;
 }
@@ -1550,7 +1566,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   border-bottom: 1px solid var(--line-hair);
   gap: 10px;
 }
-.cat-name { font: 400 18px/1 var(--serif); color: var(--ink); }
+.cat-name { font: 700 18px/1 var(--sans); color: var(--ink); }
 .cat-items { padding: 8px 12px; }
 
 .item-row {
@@ -1571,7 +1587,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .spinner {
   width: 34px; height: 34px;
   border: 3px solid var(--line);
-  border-top-color: var(--sea);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto;
@@ -1616,14 +1632,14 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .toast:active { cursor: grabbing; }
 .toast-dot { width: 8px; height: 8px; border-radius: 999px; flex: none; }
 .toast-text { flex: 1; min-width: 0; }
-.toast--status { background: var(--tint-sea); border-color: color-mix(in srgb, var(--sea) 32%, transparent); color: var(--tint-sea-ink); }
-.toast--status .toast-dot { background: var(--sea); }
-.toast--ok { background: var(--tint-olive); border-color: color-mix(in srgb, var(--olive) 32%, transparent); color: var(--tint-olive-ink); }
-.toast--ok .toast-dot { background: var(--olive); }
+.toast--status { background: var(--tint-accent); border-color: color-mix(in srgb, var(--accent) 32%, transparent); color: var(--tint-accent-ink); }
+.toast--status .toast-dot { background: var(--accent); }
+.toast--ok { background: var(--tint-ok); border-color: color-mix(in srgb, var(--ok) 32%, transparent); color: var(--tint-ok-ink); }
+.toast--ok .toast-dot { background: var(--ok); }
 .toast--warn { background: var(--tint-warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); color: var(--tint-warn-ink); }
 .toast--warn .toast-dot { background: var(--warn); }
-.toast--error { background: var(--tint-terra); border-color: color-mix(in srgb, var(--terra) 36%, transparent); color: var(--tint-terra-ink); }
-.toast--error .toast-dot { background: var(--terra); }
+.toast--error { background: var(--tint-danger); border-color: color-mix(in srgb, var(--danger) 36%, transparent); color: var(--tint-danger-ink); }
+.toast--error .toast-dot { background: var(--danger); }
 
 /* =========================================================================
    Hover — yalnızca gerçek imleçte
@@ -1636,25 +1652,25 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    ========================================================================= */
 
 @media (hover: hover) and (pointer: fine) {
-  a:hover { color: var(--sea-deep); }
+  a:hover { color: var(--accent-deep); }
   .btn:hover { transform: translateY(-1px); border-color: var(--ink-faint); }
-  .btn-primary:hover { background: var(--sea-deep); border-color: transparent; }
-  .btn-success:hover { background: var(--olive-deep); border-color: transparent; }
-  .btn-danger:hover { background: var(--terra); color: #fff; border-color: transparent; }
+  .btn-primary:hover { background: var(--accent-deep); border-color: transparent; }
+  .btn-success:hover { background: var(--ok-deep); border-color: transparent; }
+  .btn-danger:hover { background: var(--danger); color: #fff; border-color: transparent; }
   .btn-ink:hover { background: var(--ink-lift); border-color: transparent; }
   .btn-logout:hover { background: rgba(192, 95, 80, 0.32); border-color: rgba(192, 95, 80, 0.55); }
-  .btn-text-danger:hover { background: var(--tint-terra); }
+  .btn-text-danger:hover { background: var(--tint-danger); }
   .tab:hover { color: var(--ink); }
   .qty-btn:hover { background: var(--sand); }
-  .qty-btn--inc:hover { background: var(--olive-deep); }
+  .qty-btn--inc:hover { background: var(--accent-deep); }
   .cat-pill:hover { color: var(--ink); border-color: var(--line-strong); }
   .cat-pill.is-active:hover { color: #fff; border-color: transparent; }
-  .row-add:hover { background: var(--olive-deep); }
+  .row-add:hover { background: var(--accent-deep); }
   .table-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); }
-  .order-deliver:hover { background: var(--olive-deep); }
-  .order-prepare:hover { background: var(--sea-deep); }
-  .modal-close:hover { transform: rotate(90deg); background: var(--terra); }
-  .order-pay:hover { background: var(--sea-deep); }
+  .order-deliver:hover { background: var(--ok-deep); }
+  .order-prepare:hover { background: var(--accent-deep); }
+  .modal-close:hover { transform: rotate(90deg); background: var(--danger); }
+  .order-pay:hover { background: var(--accent-deep); }
 }
 
 /* =========================================================================
@@ -1722,9 +1738,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 /* =========================================================================
    Keyframes — @layer kapsamı dışında (keyframes katmanlanmaz; doküman
    sırasına göre son tanım kazanır).
-   ml-pulse: Tailwind --animate-pulse ile 'pulse' adını rezerve ediyor ve
+   kor-pulse: Tailwind --animate-pulse ile 'pulse' adını rezerve ediyor ve
    onunki sadece opacity. Bizimki opacity+scale — ad çakışmasın diye
-   'ml-' (Mavi Liman) öneki aldı.
+   'kor-' (tasarım sisteminin adı) öneki aldı.
    ========================================================================= */
 
 @keyframes fade-in    { from { opacity: 0; } to { opacity: 1; } }
@@ -1732,8 +1748,8 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 @keyframes slide-up   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pop-in     { 0% { opacity: 0; transform: scale(0.96) translateY(8px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes shake      { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
-@keyframes ml-pulse   { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.6); } }
-/* İskelet nabzı ml-pulse'tan AYRI: ml-pulse scale(0.6) da yapıyor, bir
+@keyframes kor-pulse   { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.6); } }
+/* İskelet nabzı kor-pulse'tan AYRI: kor-pulse scale(0.6) da yapıyor, bir
    iskelet çubuğunda bu büzülme yanlış okunur. */
 @keyframes skel-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 @keyframes spin       { to { transform: rotate(360deg); } }

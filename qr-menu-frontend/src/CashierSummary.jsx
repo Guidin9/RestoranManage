@@ -31,14 +31,19 @@ const barTop = (x, y, w, h, r) => {
     return `M${x},${y + h} L${x},${y + rr} Q${x},${y} ${x + rr},${y} L${x + w - rr},${y} Q${x + w},${y} ${x + w},${y + rr} L${x + w},${y + h} Z`;
 };
 
-// Tema renkleri (SVG presentation attribute'ları var() çözmediği için sabit)
-const C_SEA = '#12688a';
-const C_OLIVE = '#6f8a52';
-const C_INK = '#123240';
-const C_DIM = 'rgba(18,50,64,0.55)';
-const C_FAINT = 'rgba(18,50,64,0.4)';
-const C_LINE = 'rgba(18,50,64,0.1)';
-const FONT = "'Hanken Grotesk', system-ui, sans-serif";
+// Tema renkleri (SVG presentation attribute'ları var() çözmediği için sabit).
+// Kor paletinin AÇIK tema değerleri; :root'takilerle elle eşlenmiş.
+//
+// BİLİNEN EKSİK: bunlar sabit olduğu için grafikler karanlık modu takip
+// etmiyor. Doğrusu presentation attribute yerine CSS property kullanmak
+// (SVG'de fill bir CSS property'sidir ve var() çözer) — bkz. ASAMA-2.md P6.
+const C_SEA = '#c2410c';        // aksan: ciro trendi
+const C_OLIVE = '#15803d';      // onay tonu: çok satanlar
+const C_INK = '#1c1917';
+const C_DIM = 'rgba(28,25,23,0.58)';
+const C_FAINT = 'rgba(28,25,23,0.42)';
+const C_LINE = 'rgba(28,25,23,0.1)';
+const FONT = "'Inter', system-ui, sans-serif";
 
 // --- Son 14 gün ciro trendi (dikey çubuk) --------------------------------
 function TrendChart({ trend }) {

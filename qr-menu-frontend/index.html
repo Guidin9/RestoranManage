@@ -7,20 +7,24 @@
          taşsın diye. Karşılığında güvenli alan boşlukları index.css'te
          env(safe-area-inset-*) ile veriliyor. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Tarayıcı kabuğu .menu-head'in üst durağıyla aynı renkte olsun -->
-    <meta name="theme-color" content="#1a4759" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1e5266" media="(prefers-color-scheme: dark)" />
+    <!-- Tarayıcı kabuğu sayfa zemininin üst durağıyla aynı renkte olsun
+         (--page-grad'ın ilk durağı). Kabuk artık saydam cam, altındaki
+         sayfa zemini görünüyor. -->
+    <meta name="theme-color" content="#f5efe6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14100e" media="(prefers-color-scheme: dark)" />
     <meta name="description" content="Masanızdaki QR kodu okutun, menüyü görün ve siparişinizi doğrudan verin." />
-    <!-- Mavi Liman fontları: Marcellus (başlık) + Hanken Grotesk (gövde).
+    <!-- Kor tasarım sistemi: tek aile, Inter (değişken, opsz + wght).
          index.css'teki @import yerine burada: @import zincirli bir istek
-         (önce CSS inip parse edilmeli, sonra font istenir), <link> paralel gider. -->
+         (önce CSS inip parse edilmeli, sonra font istenir), <link> paralel gider.
+         latin-ext alt kümesi Türkçe ş/ğ/İ/ı için şart — Google bunu
+         unicode-range ile ayrı dosyada veriyor, ek istek maliyeti yok. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Marcellus&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&display=swap"
     />
-    <title>Mert'in QR Menü</title>
+    <title>QR Menü</title>
   </head>
   <body>
     <div id="root"></div>

@@ -1,4 +1,4 @@
-// "Mavi Liman" tasarımındaki çizgi ikonlar (lucide stili, inline SVG).
+// "Kor" tasarımındaki çizgi ikonlar (lucide stili, inline SVG).
 // Yalnızca görünüm — renk currentColor üzerinden geldiği için bulunduğu
 // öğenin metin rengini alır.
 
