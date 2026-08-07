@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
-import { IconPlus, IconMinus, IconX, IconUser, IconLogout, IconLogin, IconCalendar, IconCheck, IconBag, IconBell } from './icons';
+import { IconPlus, IconMinus, IconX, IconLogout, IconLogin, IconCalendar, IconCheck, IconBag, IconBell } from './icons';
+import { ICON } from './iconScale';
+import { useToast } from './useToast';
+import { useScrolled } from './useScrolled';
+import { Modal } from './Modal';
+import { fadeOut, springDefault } from './motion';
 
 function Waiter() {
+    const toast = useToast();
     // Token yoksa kayıtlı garson bilgisi de anlamsız; ikisini birlikte değerlendiriyoruz.
     const [waiterInfo, setWaiterInfo] = useState(() => {
         const saved = localStorage.getItem('waiter_info');
@@ -22,6 +29,36 @@ function Waiter() {
     // Bekleyen sepet: garson ürünleri önce burada toplar, "Siparişi Gönder" ile
     // topluca yollar. { [productId]: { product, qty } }
     const [pendingCart, setPendingCart] = useState({});
+
+    const { scrolled, navRef, sentinelRef } = useScrolled();
+
+    /* Modal açıkken 3sn'lik poll setSelectedTable(updated) çağırıp adisyon
+       satırlarını kullanıcının parmağının ALTINDA yeniden çiziyordu: "Eksilt"e
+       basarken satır kayıyor ve yanlış ürün eksiliyordu.
+
+       Veri akışına dokunmadan çözüm: dokunma başlar başlamaz bir bayrak
+       kalkıyor, parmak kalktıktan 800ms sonra iniyor. Bayrak kalkıkken gelen
+       yanıt tamponlanıyor (son hâli saklanıyor), bayrak inince uygulanıyor —
+       yani veri bayatlamıyor, sadece etkileşim anında ekran sabit kalıyor. */
+    const isInteracting = useRef(false);
+    const bufferedTable = useRef(null);
+    const releaseTimer = useRef(0);
+
+    const holdUpdates = () => {
+        isInteracting.current = true;
+        clearTimeout(releaseTimer.current);
+    };
+    const releaseUpdates = () => {
+        clearTimeout(releaseTimer.current);
+        releaseTimer.current = setTimeout(() => {
+            isInteracting.current = false;
+            if (bufferedTable.current) {
+                setSelectedTable(bufferedTable.current);
+                bufferedTable.current = null;
+            }
+        }, 800);
+    };
+    useEffect(() => () => clearTimeout(releaseTimer.current), []);
 
     // 1. MANTIK: Garson Girişi
     const handleLogin = (e) => {
@@ -72,7 +109,12 @@ function Waiter() {
                     // Eğer bir masa modalı açıksa, onun güncel halini de seçili tut
                     if (selectedTable) {
                         const updated = res.data.find(t => t.id === selectedTable.id);
-                        if (updated) setSelectedTable(updated);
+                        if (updated) {
+                            // Parmak ekrandayken satırları yeniden çizme; son
+                            // hâli sakla, dokunma bitince uygula.
+                            if (isInteracting.current) bufferedTable.current = updated;
+                            else setSelectedTable(updated);
+                        }
                     }
                 }
             })
@@ -136,7 +178,7 @@ function Waiter() {
                     fetchAllData();
                 }
             })
-            .catch(() => alert("Sipariş gönderilemedi, sunucuya ulaşılamıyor."));
+            .catch(() => toast.error("Sipariş gönderilemedi, sunucuya ulaşılamıyor."));
     };
 
     // 4. MANTIK: Adisyondan Ürün Eksiltme / Silme
@@ -146,7 +188,7 @@ function Waiter() {
                 if (res.success) fetchAllData();
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Ürün silinemedi, sunucuya ulaşılamıyor.");
+                if (!handleAuthError(err)) toast.error("Ürün silinemedi, sunucuya ulaşılamıyor.");
             });
     };
 
@@ -157,7 +199,7 @@ function Waiter() {
                 if (res.success) fetchAllData();
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
+                if (!handleAuthError(err)) toast.error("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
             });
     };
 
@@ -167,7 +209,7 @@ function Waiter() {
                 if (res.success) fetchAllData();
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
+                if (!handleAuthError(err)) toast.error("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
             });
     };
 
@@ -215,40 +257,69 @@ function Waiter() {
     // 🟢 EĞER GİRİŞ YAPILDIYSA: FULL MASA HARİTASI
     return (
         <div className="page">
-            <div className="panel reveal">
-
-                {/* ÜST BAR */}
-                <div className="panel-head">
-                    <div className="panel-head-left">
-                        <div className="panel-icon"><IconUser size={22} sw={1.5} /></div>
-                        <div>
-                            <div className="panel-title">Garson Masaları</div>
-                            <div className="panel-sub">{waiterInfo.name} · #{waiterInfo.id}</div>
-                        </div>
+            {/* ÜST BAR */}
+            <div ref={navRef} className={`app-nav${scrolled ? ' is-collapsed' : ''}`}>
+                <div className="app-nav-row">
+                    <div className="app-nav-main">
+                        <div className="app-nav-title">Masalar</div>
+                        <div className="app-nav-sub">{waiterInfo.name} · #{waiterInfo.id}</div>
                     </div>
-                    <div className="panel-actions">
-                        <span className="badge-live"><span className="dot-live" />Canlı takip</span>
-                        <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={14} />Çıkış</button>
+                    <div className="app-nav-actions">
+                        <span className="badge-live"><span className="dot-live" />Canlı</span>
+                        <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={ICON.xs} />Çıkış</button>
                     </div>
                 </div>
+            </div>
+            <div ref={sentinelRef} className="menu-sentinel" aria-hidden="true" />
 
-                {/* TÜM MASALARIN LISTESİ (GRID) */}
-                <div className="panel-body">
-                    {readyTableCount > 0 && (
-                        <div className="alert-banner">
-                            <IconBell size={17} />
-                            <span><b>{readyTableCount} masada</b> servis bekleyen sipariş var</span>
-                        </div>
-                    )}
-                    <div className="grid grid-tables">
-                        {tables.map((table, ti) => {
+            {/* TÜM MASALARIN LISTESİ (GRID) */}
+            <div className="panel-body">
+                {/* Durum bildiren uyarı: hiç hareket etmeden belirmesi
+                    gözden kaçıyordu. Giriş ve çıkış aynı yoldan (yukarıdan),
+                    böylece kaybolması da kendini haber ediyor. */}
+                <AnimatePresence initial={false}>
+                {readyTableCount > 0 && (
+                    <m.div
+                        className="alert-banner"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ opacity: fadeOut, y: springDefault }}
+                    >
+                        <IconBell size={ICON.md} />
+                        <span><b>{readyTableCount} masada</b> servis bekleyen sipariş var</span>
+                    </m.div>
+                )}
+                </AnimatePresence>
+                {/* İlk yükleme: boş bir ızgara yerine içerik biçimli iskelet.
+                    Diğer üç ekranla aynı davranış. */}
+                {tables.length === 0 && (
+                    <div className="grid grid-tables" aria-hidden="true">
+                        {[0, 1, 2, 3].map((i) => (
+                            <div key={i} className="table-card table-card--free">
+                                <div className="row-between">
+                                    <span className="skel w-20 h-5" />
+                                </div>
+                                <div className="table-meta"><span className="skel w-24" /></div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* 3sn'lik poll: masa eklenip silindiğinde kartlar ışınlanmasın */}
+                <div className="grid grid-tables">
+                    <AnimatePresence initial={false}>
+                        {tables.map((table) => {
                             const ready = tableHasReady(table);
                             return (
-                                <button
+                                <m.button
                                     key={table.id}
                                     onClick={() => setSelectedTable(table)}
-                                    className={`table-card reveal ${table.is_occupied ? 'table-card--busy' : 'table-card--free'} ${ready ? 'table-card--pending' : ''}`}
-                                    style={{ '--i': ti }}
+                                    className={`table-card ${table.is_occupied ? 'table-card--busy' : 'table-card--free'} ${ready ? 'table-card--pending' : ''}`}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.97 }}
+                                    transition={{ opacity: fadeOut, y: springDefault, scale: springDefault }}
                                 >
                                     <div className="row-between">
                                         <span className="table-name">{table.table_number}</span>
@@ -263,62 +334,84 @@ function Waiter() {
                                             ? `${table.active_order?.items?.length || 0} kalem ürün`
                                             : 'sipariş almak için dokunun'}
                                     </div>
-                                </button>
+                                </m.button>
                             );
                         })}
-                    </div>
+                    </AnimatePresence>
                 </div>
             </div>
 
-            {/* MASAYA TIKLANDIĞINDA AÇILAN SİPARİŞ / ADİSYON MODALI */}
-            {selectedTable && (
-                <div className="modal-overlay" onClick={() => setSelectedTable(null)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-
+            {/* MASAYA TIKLANDIĞINDA AÇILAN SİPARİŞ / ADİSYON MODALI.
+                El yapımı overlay yerine <Modal>: Escape, odak tuzağı, odağı
+                geri verme, iOS-güvenli kaydırma kilidi ve çıkış animasyonu
+                oradan geliyor (ASAMA-2 P1). */}
+            <Modal
+                open={!!selectedTable}
+                onClose={() => setSelectedTable(null)}
+                labelledBy="table-modal-title"
+            >
+                {selectedTable && (
+                    <>
                         <div className="modal-head">
-                            <span className="modal-title">{selectedTable.table_number}</span>
-                            <button onClick={() => setSelectedTable(null)} className="modal-close"><IconX size={17} /></button>
+                            <span className="modal-title" id="table-modal-title">{selectedTable.table_number}</span>
+                            <button onClick={() => setSelectedTable(null)} className="modal-close" aria-label="Kapat"><IconX size={ICON.md} /></button>
                         </div>
 
-                        <div className="modal-body">
+                        {/* Poll'un satırları parmağın altında değiştirmesini
+                            engelleyen tampon burada devreye giriyor. */}
+                        <div
+                            className="modal-body"
+                            onPointerDownCapture={holdUpdates}
+                            onPointerUpCapture={releaseUpdates}
+                            onPointerCancelCapture={releaseUpdates}
+                        >
 
                             {/* BÖLÜM 1: MEVCUT ADİSYON & ÜRÜN SİLME */}
                             <h4 className="section-title"><IconCalendar />Masadaki Güncel Adisyon</h4>
 
                             {selectedTable.is_occupied && orderItems.length > 0 ? (
-                                <div className="stack" style={{ gap: 8, marginBottom: 22 }}>
-                                    {orderItems.map(item => (
-                                        <div key={item.id} className={`line-row ${item.ready_quantity > 0 ? 'line-row--pending' : ''}`}>
-                                            <span className="line-qty">{item.quantity}×</span>
-                                            <span className="line-name">{item.product ? item.product.name : 'Ürün'}</span>
-                                            {item.stage === 'served' ? (
-                                                <span className="status-tag status-tag--ok">Servis edildi</span>
-                                            ) : item.stage === 'ready' ? (
-                                                <span className="status-tag status-tag--ready">Servise hazır</span>
-                                            ) : (
-                                                <span className="status-tag status-tag--wait">Hazırlanıyor</span>
-                                            )}
-                                            <span className="line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
-                                            {item.ready_quantity > 0 ? (
-                                                <button onClick={() => handleServeItem(item.id)} className="btn btn-success btn-sm"><IconCheck size={13} />Servis Et</button>
-                                            ) : (
-                                                <button onClick={() => handleRemoveItem(item.id)} className="btn btn-danger btn-sm"><IconMinus size={13} />Eksilt</button>
-                                            )}
-                                        </div>
-                                    ))}
+                                <div className="stack mb-[22px]" style={{ gap: 8 }}>
+                                    <AnimatePresence initial={false}>
+                                        {orderItems.map(item => (
+                                            <m.div
+                                                key={item.id}
+                                                className={`line-row ${item.ready_quantity > 0 ? 'line-row--pending' : ''}`}
+                                                initial={{ opacity: 0, x: -8 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -8 }}
+                                                transition={{ opacity: fadeOut, x: springDefault }}
+                                            >
+                                                <span className="line-qty">{item.quantity}×</span>
+                                                <span className="line-name">{item.product ? item.product.name : 'Ürün'}</span>
+                                                {item.stage === 'served' ? (
+                                                    <span className="status-tag status-tag--ok">Servis edildi</span>
+                                                ) : item.stage === 'ready' ? (
+                                                    <span className="status-tag status-tag--ready">Servise hazır</span>
+                                                ) : (
+                                                    <span className="status-tag status-tag--wait">Hazırlanıyor</span>
+                                                )}
+                                                <span className="line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
+                                                {item.ready_quantity > 0 ? (
+                                                    <button onClick={() => handleServeItem(item.id)} className="btn btn-success btn-sm"><IconCheck size={ICON.xs} />Servis Et</button>
+                                                ) : (
+                                                    <button onClick={() => handleRemoveItem(item.id)} className="btn btn-danger btn-sm"><IconMinus size={ICON.xs} />Eksilt</button>
+                                                )}
+                                            </m.div>
+                                        ))}
+                                    </AnimatePresence>
                                     <div className="total-row"><span>Toplam</span><span>{orderTotal} ₺</span></div>
                                     {selectedReadyCount > 0 && (
-                                        <button onClick={() => handleServeAll(selectedTable.active_order.id)} className="btn btn-success btn-block" style={{ marginTop: 4 }}>
-                                            <IconCheck size={16} />Tümünü Servis Et ({selectedReadyCount} ürün)
+                                        <button onClick={() => handleServeAll(selectedTable.active_order.id)} className="btn btn-success btn-block mt-1">
+                                            <IconCheck size={ICON.sm} />Tümünü Servis Et ({selectedReadyCount} ürün)
                                         </button>
                                     )}
                                 </div>
                             ) : (
-                                <div className="hint-box" style={{ marginBottom: 22 }}>Bu masada henüz ürün yok — aşağıdan ekleyin.</div>
+                                <div className="hint-box mb-[22px]">Bu masada henüz ürün yok — aşağıdan ekleyin.</div>
                             )}
 
                             {/* BÖLÜM 2: MASAYA MENÜDEN ÜRÜN EKLEME (önce sepete toplanır) */}
-                            <h4 className="section-title section-title--add"><IconPlus size={15} />Masaya Ürün Ekle</h4>
+                            <h4 className="section-title section-title--add"><IconPlus size={ICON.sm} />Masaya Ürün Ekle</h4>
 
                             {menu.map(category => (
                                 <div key={category.id}>
@@ -334,12 +427,12 @@ function Waiter() {
                                                     </div>
                                                     {inCart > 0 ? (
                                                         <div className="stepper">
-                                                            <button onClick={() => decFromPending(product.id)} className="qty-btn"><IconMinus size={14} /></button>
+                                                            <button onClick={() => decFromPending(product.id)} className="qty-btn"><IconMinus size={ICON.xs} /></button>
                                                             <span className="qty-num">{inCart}</span>
-                                                            <button onClick={() => addToPending(product)} className="qty-btn qty-btn--inc"><IconPlus size={14} /></button>
+                                                            <button onClick={() => addToPending(product)} className="qty-btn qty-btn--inc"><IconPlus size={ICON.xs} /></button>
                                                         </div>
                                                     ) : (
-                                                        <button onClick={() => addToPending(product)} className="btn btn-success btn-sm"><IconPlus size={12} />Ekle</button>
+                                                        <button onClick={() => addToPending(product)} className="btn btn-success btn-sm"><IconPlus size={ICON.xs} />Ekle</button>
                                                     )}
                                                 </div>
                                             );
@@ -352,7 +445,7 @@ function Waiter() {
                             {pendingCount > 0 && (
                                 <div className="pending-cart">
                                     <div className="pending-cart-head">
-                                        <div className="cart-bag"><IconBag size={19} /><span className="cart-count">{pendingCount}</span></div>
+                                        <div className="cart-bag"><IconBag size={ICON.lg} /><span className="cart-count">{pendingCount}</span></div>
                                         <span className="pending-cart-title">Gönderilecek Sepet</span>
                                         <span className="pending-cart-total">{pendingTotal} ₺</span>
                                     </div>
@@ -361,24 +454,23 @@ function Waiter() {
                                             <div key={product.id} className="pending-line">
                                                 <span className="pending-line-name">{product.name}</span>
                                                 <div className="stepper">
-                                                    <button onClick={() => decFromPending(product.id)} className="qty-btn"><IconMinus size={14} /></button>
+                                                    <button onClick={() => decFromPending(product.id)} className="qty-btn"><IconMinus size={ICON.xs} /></button>
                                                     <span className="qty-num">{qty}</span>
-                                                    <button onClick={() => addToPending(product)} className="qty-btn qty-btn--inc"><IconPlus size={14} /></button>
+                                                    <button onClick={() => addToPending(product)} className="qty-btn qty-btn--inc"><IconPlus size={ICON.xs} /></button>
                                                 </div>
                                                 <span className="pending-line-price">{(product.price * qty).toFixed(2)} ₺</span>
                                             </div>
                                         ))}
                                     </div>
-                                    <button onClick={submitPending} className="btn btn-success btn-block"><IconCheck size={16} />Siparişi Gönder ({pendingTotal} ₺)</button>
+                                    <button onClick={submitPending} className="btn btn-success btn-block"><IconCheck size={ICON.sm} />Siparişi Gönder ({pendingTotal} ₺)</button>
                                 </div>
                             )}
 
-                            <button onClick={() => setSelectedTable(null)} className="btn btn-ink btn-block" style={{ marginTop: 14 }}>Pencereyi Kapat</button>
+                            <button onClick={() => setSelectedTable(null)} className="btn btn-ink btn-block mt-3.5">Pencereyi Kapat</button>
                         </div>
-
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
+            </Modal>
         </div>
     );
 }

@@ -171,9 +171,9 @@ function App() {
                 yapışır — böylece içerik altından kayar ve sayfaya elle üst
                 padding vermek gerekmez. Materyal ve saç teli ayıraç yalnızca
                 içerik altına girdiğinde belirir (scroll edge effect). */}
-            <div ref={navRef} className={`menu-nav${collapsed ? ' is-collapsed' : ''}`}>
-                <div className="menu-nav-row">
-                    <span className="menu-nav-title" aria-hidden="true">QR Menü</span>
+            <div ref={navRef} className={`app-nav app-nav--reveal${collapsed ? ' is-collapsed' : ''}`}>
+                <div className="app-nav-row">
+                    <span className="app-nav-title" aria-hidden="true">QR Menü</span>
                     <span className="table-chip">
                         Masa {tableNumber ?? <span className="skel" aria-label="Masa numarası yükleniyor" />}
                     </span>

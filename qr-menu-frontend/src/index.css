@@ -345,7 +345,7 @@
 .menu-brand, .kpi-value                                     { letter-spacing: var(--track-display); }
 .panel-title, .modal-title, .confirm-title, .table-name,
 .order-table, .empty h3, .tab-total-value, .login-head h2   { letter-spacing: var(--track-title); }
-.row-name, .menu-nav-title, .cat-name, .ctx-title,
+.row-name, .app-nav-title, .cat-name, .ctx-title,
 .item-name, .item-price, .order-total-value, .cart-total    { letter-spacing: var(--track-heading); }
 .line-name, .staff-name, .input, .select, .tab, .cat-pill   { letter-spacing: var(--track-body); }
 .cart-name, .cart-price, .add-chip-price, .order-time, .row-price,
@@ -368,10 +368,15 @@
    Ortak yapı
    ========================================================================= */
 
+/* Personel ekranlarının sayfası. Müşteri menüsündeki .menu-page ile aynı
+   kalıp — tek fark genişlik: bunlar masaüstünde de kullanılıyor.
+   Üst padding YOK: yapışkan .app-nav akışın ilk elemanı olarak o boşluğu
+   kendisi veriyor. */
 .page {
   max-width: 1160px;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 0 max(16px, env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom))
+              max(16px, env(safe-area-inset-left));
   animation: fade-in 0.5s var(--ease-out) both;
 }
 
@@ -383,62 +388,51 @@
 .grid-tables { grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); gap: 16px; }
 .grid-wide   { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 
-/* Sahne giriş animasyonu — JSX'te style={{'--i': index}} */
+/* Sahne giriş animasyonu — JSX'te style={{'--i': index}}.
+   550ms fazla ağırdı: bir arayüz animasyonu 300ms'i geçmemeli, kademe
+   gecikmesi de 30-80ms bandında kalmalı (55ms zaten öyleydi). */
 .reveal {
-  animation: fade-in-up 0.55s var(--ease-out) both;
+  animation: fade-in-up 0.34s var(--ease-out) both;
   animation-delay: calc(var(--i, 0) * 55ms);
 }
 
 /* =========================================================================
-   Panel — koyu başlıklı beyaz ekran kabuğu (garson / kasa / admin)
+   Personel ekranı gövdesi
+
+   Eski koyu gradient'li .panel kabuğu 2026-08-07'de kalktı: dört ekran da
+   artık müşteri menüsüyle aynı dili konuşuyor — yapışkan cam .app-nav,
+   altında sayfa zemini üzerinde duran gruplu yüzeyler. Ekran içeriğini
+   saran bir kart YOK; kart olan şey verinin kendisi.
    ========================================================================= */
 
-.panel {
-  background: var(--paper);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-inset), var(--shadow-panel);
-}
-
-.panel-head {
-  padding: 20px 24px;
-  background: var(--deep-grad);
-  color: #f7f2ee;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.panel-head-left { display: flex; align-items: center; gap: 13px; }
 .panel-icon {
-  width: 42px; height: 42px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: var(--tint-accent);
+  color: var(--tint-accent-ink);
   display: flex; align-items: center; justify-content: center;
   flex: none;
 }
-.panel-title { font: 700 21px/1.15 var(--sans); }
-.panel-sub { font: 400 11px/1.3 var(--sans); color: rgba(247, 242, 238, 0.6); margin-top: 5px; }
-.panel-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.panel-body { padding: 24px; }
+.panel-body { padding: 20px 0 0; }
 
-/* Canlı takip rozeti (koyu başlık üzerinde) */
+/* Canlı takip rozeti — artık açık cam kabuğun üstünde duruyor,
+   koyu başlığın değil. */
 .badge-live {
   display: inline-flex; align-items: center; gap: 7px;
-  background: color-mix(in srgb, var(--ok) 22%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ok-light) 40%, transparent);
+  background: var(--tint-ok);
+  border: 1px solid color-mix(in srgb, var(--ok) 28%, transparent);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 6px 11px;
   font: 600 11px/1 var(--sans);
-  color: #86efac;
+  color: var(--tint-ok-ink);
+  white-space: nowrap;
 }
 .dot-live {
   width: 7px; height: 7px; border-radius: 999px;
-  background: var(--ok-light);
+  background: var(--ok);
   animation: kor-pulse 1.6s ease-in-out infinite;
 }
+@media (max-width: 560px) { .badge-live { display: none; } }
 
 /* =========================================================================
    Butonlar
@@ -473,19 +467,26 @@
   box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--ok) 80%, transparent);
 }
 
-/* Tasarımda silme eylemleri terakota konturlu, hover'da dolar */
+/* Silme eylemleri konturlu, hover'da dolar */
 .btn-danger {
   background: transparent; color: var(--danger);
   border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
+/* Onay diyaloğundaki asıl yıkıcı buton: burada dolu olmalı — kullanıcı
+   zaten bilerek geldi, eylem net görünsün. */
+.btn-danger-solid {
+  background: var(--danger); color: #fff; border-color: transparent;
+  box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--danger) 60%, transparent);
+}
 
 .btn-ink { background: var(--ink); color: var(--paper); border-color: transparent; }
 
-/* Koyu panel başlığındaki çıkış butonu — her iki temada da --deep-grad üstünde */
+/* Kabuktaki çıkış butonu. Artık açık cam üzerinde: metin rengi doğrudan
+   --danger, sabit açık kırmızı DEĞİL (o koyu zemin varsayıyordu). */
 .btn-logout {
-  background: color-mix(in srgb, var(--danger) 18%, transparent);
-  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
-  color: #fca5a5;
+  background: var(--tint-danger);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+  color: var(--tint-danger-ink);
 }
 
 /* Yalnızca metin görünümlü silme butonu (satır içi) */
@@ -552,9 +553,16 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   gap: 10px;
   flex-wrap: wrap;
   align-items: flex-end;
-  background: var(--mist);
-  border: 1px solid var(--line-hair);
-  border-radius: var(--radius-md);
+  /* --mist sayfa zemininden neredeyse ayırt edilemiyordu (ikisi de krem);
+     koyu .panel kabuğu kalkınca form kutusu kayboluyordu. Diğer yüzeylerle
+     aynı cam materyale geçti. */
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
+  border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 20px;
 }
@@ -620,26 +628,36 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    Sekmeler (admin — alt çizgili)
    ========================================================================= */
 
+/* Kategori şeridiyle (.cat-bar/.cat-pill) aynı biçim: aynı sistemde iki ayrı
+   "seçili sekme" görünümü olmasın. Davranışları farklı olduğu için sınıflar
+   ayrı — bu görünüm işi, kaydırma-takibi değil. */
 .tabs {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 18px 24px 0;
-  border-bottom: 1px solid var(--line);
+  gap: 7px;
+  padding: 0 18px 11px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
-  border: none;
-  background: transparent;
-  min-height: 44px;
-  padding: 10px 4px 14px;
-  font: 500 14px/1 var(--sans);
+  position: relative;
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper);
   color: var(--ink-dim);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  font: 600 13px/1 var(--sans);
+  white-space: nowrap;
   cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out),
+              border-color 0.2s var(--ease-out), transform 0.15s var(--ease-out);
 }
-.tab.active { color: var(--ink); font-weight: 700; border-bottom-color: var(--accent); }
+/* Görsel kutu 32px, dokunma alanı 44px */
+.tab::after { content: ''; position: absolute; inset: -6px -2px; }
+.tab.active { background: var(--accent); border-color: transparent; color: #fff; }
 
 /* =========================================================================
    Boş durum
@@ -680,7 +698,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    blur'u sonradan açmak gözle görülür bir "pat" yaratıyor, sayfanın en
    üstündeyken de arkada düz zemin olduğu için blur zaten görünmüyor.
    ------------------------------------------------------------------------- */
-.menu-nav {
+.app-nav {
   position: sticky;
   top: 0;
   z-index: 30;
@@ -693,33 +711,46 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   box-shadow: 0 1px 0 0 transparent;
   transition: background 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
-.menu-nav.is-collapsed {
+.app-nav.is-collapsed {
   background: var(--glass);
   box-shadow: 0 1px 0 0 var(--line-hair);
 }
 
-.menu-nav-row {
+.app-nav-row {
   height: 52px;
   padding: 0 18px;
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px;
 }
 
-/* Kompakt başlık — büyük başlık kabuğun altına girince devralır. Aşağıdan
-   yukarı gelmesi hareketin yönünü haber verir: yerini aldığı başlık yukarı
-   kaymıştır. */
-.menu-nav-title {
+/* Başlık VARSAYILAN OLARAK GÖRÜNÜR. Personel ekranları birer araç: büyük
+   başlığa ayıracak dikey yerleri yok, adları hep üstte durur.
+   Müşteri menüsü .app-nav--reveal ekleyerek Apple'ın large-title devrini
+   açar: başlık gizli başlar, büyük başlık kabuğun altına girince devralır.
+   Aşağıdan yukarı gelmesi hareketin yönünü haber verir. */
+.app-nav-title {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font: 600 17px/1.15 var(--sans);
   color: var(--ink);
-  opacity: 0;
-  transform: translateY(7px);
   transition: opacity 0.2s var(--ease-out), transform 0.28s var(--ease-out);
 }
-.is-collapsed .menu-nav-title { opacity: 1; transform: none; }
+.app-nav--reveal .app-nav-title { opacity: 0; transform: translateY(7px); }
+.app-nav--reveal.is-collapsed .app-nav-title { opacity: 1; transform: none; }
+
+/* Başlığın altındaki bir satırlık bağlam (ör. "Açık hesaplar canlı izleniyor").
+   Ekran dar olduğunda gizlenir: başlık ve eylemler önceliklidir. */
+.app-nav-sub {
+  font: 400 11px/1.3 var(--sans);
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+@media (max-width: 480px) { .app-nav-sub { display: none; } }
+
+.app-nav-main { min-width: 0; flex: 1; }
+.app-nav-actions { display: flex; align-items: center; gap: 9px; flex: none; }
 
 .table-chip {
   flex: none;
@@ -868,13 +899,20 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   margin-bottom: 22px;
 }
 
+/* Gruplu yüzeyin ÜSTÜNDE duran büyük-harf mikro etiket. Tek tanım:
+   2026-08-07'de ikinci bir .section-label kuralı (garson modalı için,
+   dosyanın ilerisinde) bunu sessizce eziyordu — aynı specificity'de sonra
+   gelen kazanır. İkisi de aynı işi yaptığı için diğeri silindi. */
 .section-label {
   font: 700 11px/1 var(--sans);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-dim);
-  margin: 0 0 9px 16px;
+  margin: 14px 0 9px;
 }
+/* Gruplu listede üst boşluk bölümün kendisinden gelir; girinti ise etiketi
+   kartın iç kenarıyla hizalar. */
+.menu-section > .section-label { margin: 0 0 9px 16px; }
 
 /* Sayfa gradient'inin üstünde açık materyal. Başka bir yarı saydam yüzeyle
    asla üst üste gelmiyor — "açığın üstüne açık koyma" kuralı sağlam.
@@ -1114,6 +1152,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   margin: 0 auto 16px;
 }
 .confirm-icon--soft { background: var(--sand); color: var(--accent); width: 60px; height: 60px; }
+/* Yıkıcı onay: ikon da kırmızı tint'te — diyaloğun ne olduğu okumadan önce
+   belli olsun. */
+.confirm-icon--danger { background: var(--tint-danger); color: var(--tint-danger-ink); width: 60px; height: 60px; }
 .confirm-title { font: 700 24px/1.1 var(--sans); color: var(--ink); }
 .confirm-sub { font: 400 13px/1.5 var(--sans); color: var(--ink-dim); margin-top: 8px; }
 
@@ -1125,7 +1166,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   text-align: left;
   font: inherit;
   border: 1px solid;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: 16px;
   cursor: pointer;
   box-shadow: var(--shadow-card);
@@ -1240,6 +1281,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   box-shadow: var(--shadow-inset), var(--shadow-panel);
 }
 .modal--dialog { max-width: 400px; padding: 28px; text-align: center; }
+/* Onay diyaloğunun buton çifti. Vazgeç solda ve dar, onay sağda ve geniş:
+   ağırlık asıl eyleme veriliyor, ama yıkıcı olanda kaçış yolu hep görünür. */
+.dialog-actions { display: flex; gap: 10px; margin-top: 22px; }
 .modal-head {
   position: sticky; top: 0; z-index: 2;
   padding: 18px 22px;
@@ -1272,7 +1316,8 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .section-title svg { color: var(--accent); }
 .section-title--add svg { color: var(--ok); }
-.section-label { font: 600 12px/1 var(--sans); color: var(--ink-dim); margin: 14px 0 9px; }
+/* (.section-label buradan kaldırıldı — tek tanımı yukarıda, gruplu yüzey
+   etiketiyle ortak. Buradaki ikinci kural onu sessizce eziyordu.) */
 
 /* Adisyon satırı */
 .line-row {
@@ -1346,29 +1391,46 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    Kasa — açık hesap kartları
    ========================================================================= */
 
+/* .group-card ile aynı materyal ve yarıçap: müşteri menüsündeki gruplu
+   yüzeyle aynı nesne ailesinden okunsun. */
 .order-card {
   display: flex; flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--paper-soft);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   box-shadow: var(--shadow-inset), var(--shadow-card);
 }
 .order-head {
-  padding: 15px 17px;
+  padding: 14px 16px;
   display: flex; align-items: center; justify-content: space-between;
-  background: var(--sand);
+  gap: 10px;
   border-bottom: 1px solid var(--line-hair);
 }
 .order-table { font: 700 20px/1 var(--sans); color: var(--ink); }
 .order-time { font: 500 11px/1 var(--sans); color: var(--ink-dim); }
+/* Saç teli ayıraç, boşluk değil — menüdeki .menu-row ile aynı ritim. */
 .order-lines {
   list-style: none; margin: 0;
-  padding: 14px 17px;
-  display: flex; flex-direction: column; gap: 9px;
+  padding: 0;
   flex: 1;
 }
-.order-line { display: flex; align-items: center; gap: 9px; }
+.order-line {
+  position: relative;
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 16px;
+  min-height: 44px;
+}
+.order-line + .order-line::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 16px; right: 16px;
+  height: 1px;
+  background: var(--line-hair);
+}
 .order-line .line-qty { font: 700 12px/1 var(--sans); }
 .order-line-name { flex: 1; font: 400 13px/1.2 var(--sans); color: var(--ink); }
 .order-line-price { font: 600 13px/1 var(--sans); color: var(--ink); }
@@ -1412,8 +1474,11 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .kpi {
   padding: 18px;
   border-radius: var(--radius-md);
-  background: var(--paper-soft);
-  border: 1px solid var(--line);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
   box-shadow: var(--shadow-inset), var(--shadow-card);
   display: flex;
   flex-direction: column;
@@ -1461,9 +1526,12 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 
 .chart-card {
   padding: 18px;
-  border-radius: var(--radius-md);
-  background: var(--paper);
-  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
   box-shadow: var(--shadow-inset), var(--shadow-card);
   margin-bottom: 16px;
 }
@@ -1503,6 +1571,19 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 .pbar-sub { font: 500 11px/1 var(--sans); color: var(--ink-dim); }
 
+/* Ciro trendi grafiği (elle yazılmış inline SVG).
+   fill/stroke SVG'de birer CSS property: buradan yazıldığında var() çözülür
+   ve grafik karanlık modu bedava takip eder. Presentation attribute olarak
+   (fill="…") yazılsaydı çözmezdi — eski sabit hex'lerin sebebi buydu. */
+.chart-axis { stroke: var(--line); }
+.chart-label { fill: var(--ink-dim); font-family: var(--sans); }
+/* 0.4 fazla soluktu: 14 çubuğun 13'ü okunmuyordu. 0.55'te hem hepsi
+   okunuyor hem seçili gün tam opaklıkla ayrışıyor. */
+.chart-bar { fill: var(--accent); opacity: 0.55; transition: opacity 0.2s var(--ease-out); }
+.chart-bar.is-sel { opacity: 1; }
+.chart-tick { fill: var(--ink-faint); font-family: var(--sans); }
+.chart-tick.is-sel { fill: var(--ink); font-weight: 700; }
+
 @media (prefers-reduced-motion: reduce) {
   .pbar-fill { transition: none; }
 }
@@ -1513,9 +1594,14 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 
 .staff-row {
   display: flex; align-items: center; gap: 13px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: var(--radius-md);
   padding: 13px 15px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
 }
 .avatar {
   width: 38px; height: 38px;
@@ -1529,10 +1615,14 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .staff-user { font: 400 12px/1 var(--sans); color: var(--ink-dim); margin-top: 3px; }
 
 .table-admin-card {
-  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 16px;
-  background: var(--paper-soft);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
 }
 
 .qr-box {
@@ -1555,9 +1645,14 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 .link::after { content: ''; position: absolute; inset: -12px -4px; }
 
 .cat-card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-top);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
 }
 .cat-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -1657,6 +1752,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   .btn-primary:hover { background: var(--accent-deep); border-color: transparent; }
   .btn-success:hover { background: var(--ok-deep); border-color: transparent; }
   .btn-danger:hover { background: var(--danger); color: #fff; border-color: transparent; }
+  .btn-danger-solid:hover { background: color-mix(in srgb, var(--danger) 84%, black); border-color: transparent; }
   .btn-ink:hover { background: var(--ink-lift); border-color: transparent; }
   .btn-logout:hover { background: color-mix(in srgb, var(--danger) 32%, transparent); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
   .btn-text-danger:hover { background: var(--tint-danger); }
@@ -1684,6 +1780,24 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    hem hover hem active durumdaki bir butonun basma tepkisi kaybolmasın.
    ========================================================================= */
 
+/* =========================================================================
+   Klavye odağı — basma geri bildiriminin klavyedeki karşılığı
+
+   Eskiden yalnız .btn'de vardı; sekmeler, adet butonları, masa kartları ve
+   satır içi eylemler odaklandığında hiçbir iz vermiyordu. Personel ekranları
+   masaüstünde kullanılıyor, yani bu gerçekten kullanılan bir yol.
+   :focus-visible olduğu için fareyle tıklayanda çıkmaz.
+   ========================================================================= */
+
+.qty-btn:focus-visible, .tab:focus-visible, .cat-pill:focus-visible,
+.row-add:focus-visible, .table-card:focus-visible, .order-pay:focus-visible,
+.order-deliver:focus-visible, .order-prepare:focus-visible,
+.modal-close:focus-visible, .link:focus-visible, .btn-text-danger:focus-visible,
+.input:focus-visible, .select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .btn:active, .qty-btn:active, .tab:active, .order-pay:active, .order-deliver:active,
 .order-prepare:active, .table-card:active, .btn-text-danger:active,
 .row-add:active, .cat-pill:active {
@@ -1697,8 +1811,9 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
    ========================================================================= */
 
 @media (prefers-contrast: more) {
-  .group-card, .panel, .order-card, .kpi, .chart-card,
-  .add-chip, .staff-row, .line-row, .table-card, .cat-pill {
+  .group-card, .order-card, .kpi, .chart-card, .cat-card, .form-box,
+  .table-admin-card, .add-chip, .staff-row, .line-row, .table-card,
+  .cat-pill, .tab {
     border-width: 1.5px;
     border-color: var(--line-strong);
   }
@@ -1708,14 +1823,17 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .group-card {
+  /* Cam materyal kullanan HER yüzey burada olmalı; biri unutulursa saydamlık
+     kapalıyken o tek eleman camdan kalır ve sırıtır. */
+  .group-card, .order-card, .kpi, .chart-card, .cat-card,
+  .form-box, .table-admin-card, .staff-row {
     background: var(--paper);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     border-color: var(--line);
   }
   /* Kabuk her zaman opak: saydamlık kapalıyken içerik altından geçmesin */
-  .menu-nav, .menu-nav.is-collapsed {
+  .app-nav, .app-nav.is-collapsed {
     background: var(--paper);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

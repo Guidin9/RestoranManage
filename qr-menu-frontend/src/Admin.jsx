@@ -1,15 +1,39 @@
 import { useState, useEffect } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { apiFetch, getToken, setToken, clearToken, IMGBB_API_KEY, UnauthorizedError } from './api';
-import { IconPlus, IconTrash, IconUser, IconShield, IconLogout, IconLogin, IconLink, IconPrinter, IconMail } from './icons';
+import { IconPlus, IconTrash, IconUser, IconLogout, IconLogin, IconLink, IconPrinter, IconMail } from './icons';
+import { ICON } from './iconScale';
+import { useToast } from './useToast';
+import { useScrolled } from './useScrolled';
+import { Modal } from './Modal';
+import { fadeOut } from './motion';
 
 // QR kodu panelin açıldığı adresi hedefler; canlıda otomatik olarak doğru domain olur.
 const menuUrlFor = (qrCode) => `${window.location.origin}/?table=${qrCode}`;
 const qrImageFor = (qrCode, size) => `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(menuUrlFor(qrCode))}`;
 
 function Admin() {
+    const toast = useToast();
     const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => !!getToken('admin'));
 
     const [activeTab, setActiveTab] = useState('waiters');
+    const { scrolled, navRef, sentinelRef } = useScrolled();
+
+    /* Silme onayı. window.confirm yerine tasarım sistemindeki <Modal>:
+       confirm sayfayı bloklar, sayfanın dilinde/temasında değildir ve
+       dokunmatikte akışı koparır.
+
+       DÖRT silmenin dördünde de onay duruyor — ASAMA-2 notu yalnız kaskad
+       eden kategori silmede tutmayı öneriyordu, ama geri alma (undo) yok:
+       onaysız bir yanlış dokunuş veriyi kurtarmasız siliyor. Kaskad edenin
+       metni ayrıca sert, çünkü tek kayıt değil bir ağaç gidiyor.
+       { title, body, danger, onConfirm } */
+    const [confirmState, setConfirmState] = useState(null);
+    const askConfirm = (config) => setConfirmState(config);
+    const runConfirm = () => {
+        confirmState?.onConfirm?.();
+        setConfirmState(null);
+    };
 
     // Login State
     const [username, setUsername] = useState('');
@@ -88,24 +112,25 @@ function Admin() {
         apiFetch('/api/admin/waiters', { role: 'admin', method: 'POST', body: newWaiter })
             .then(res => {
                 if (res.success) {
-                    alert(res.message);
+                    toast.ok(res.message);
                     setNewWaiter({ name: '', username: '', password: '' });
                     loadAllData();
                 } else {
-                    alert("⚠️ Hata: " + (res.message || "Garson eklenemedi."));
+                    toast.error(res.message || "Garson eklenemedi.");
                 }
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Bağlantı hatası!");
+                if (!handleAuthError(err)) toast.error("Bağlantı hatası!");
             });
     };
 
-    const deleteWaiter = (id) => {
-        if (!window.confirm("Bu garsonu silmek istediğinize emin misiniz?")) return;
-        apiFetch(`/api/admin/waiters/${id}`, { role: 'admin', method: 'DELETE' })
+    const deleteWaiter = (waiter) => askConfirm({
+        title: 'Garsonu sil',
+        body: <><b>{waiter.name}</b> silinecek ve bu hesapla giriş yapılamayacak.</>,
+        onConfirm: () => apiFetch(`/api/admin/waiters/${waiter.id}`, { role: 'admin', method: 'DELETE' })
             .then(() => loadAllData())
-            .catch(handleAuthError);
-    };
+            .catch(handleAuthError),
+    });
 
     // --- MASA İŞLEMLERİ ---
     const addTable = (e) => {
@@ -113,22 +138,23 @@ function Admin() {
         apiFetch('/api/admin/tables', { role: 'admin', method: 'POST', body: { table_number: newTableNumber } })
             .then(res => {
                 if (res.success) {
-                    alert(res.message);
+                    toast.ok(res.message);
                     setNewTableNumber('');
                     loadAllData();
                 }
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Bağlantı hatası!");
+                if (!handleAuthError(err)) toast.error("Bağlantı hatası!");
             });
     };
 
-    const deleteTable = (id) => {
-        if (!window.confirm("Masayı silmek istediğinize emin misiniz?")) return;
-        apiFetch(`/api/admin/tables/${id}`, { role: 'admin', method: 'DELETE' })
+    const deleteTable = (table) => askConfirm({
+        title: 'Masayı sil',
+        body: <><b>{table.table_number}</b> silinecek. Bu masanın QR kodu bir daha çalışmaz — basılmışsa yenilemeniz gerekir.</>,
+        onConfirm: () => apiFetch(`/api/admin/tables/${table.id}`, { role: 'admin', method: 'DELETE' })
             .then(() => loadAllData())
-            .catch(handleAuthError);
-    };
+            .catch(handleAuthError),
+    });
 
     // --- KATEGORİ İŞLEMLERİ ---
     const addCategory = (e) => {
@@ -136,29 +162,33 @@ function Admin() {
         apiFetch('/api/admin/categories', { role: 'admin', method: 'POST', body: { name: newCategoryName } })
             .then(res => {
                 if (res.success) {
-                    alert(res.message);
+                    toast.ok(res.message);
                     setNewCategoryName('');
                     loadAllData();
                 }
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Bağlantı hatası!");
+                if (!handleAuthError(err)) toast.error("Bağlantı hatası!");
             });
     };
 
-    const deleteCategory = (id) => {
-        if (!window.confirm("Bu kategoriyi ve içindeki TÜM ürünleri silmek istediğinize emin misiniz?")) return;
-        apiFetch(`/api/admin/categories/${id}`, { role: 'admin', method: 'DELETE' })
+    // Tek gerçekten kaskad eden silme: kategori giderse ürünleri de gider
+    // (products tablosunda onDelete('cascade')).
+    const deleteCategory = (category) => askConfirm({
+        title: 'Kategoriyi ve ürünlerini sil',
+        danger: true,
+        body: <><b>{category.name}</b> kategorisiyle birlikte içindeki <b>{category.products?.length || 0} ürün</b> de silinecek. Bu işlem geri alınamaz.</>,
+        onConfirm: () => apiFetch(`/api/admin/categories/${category.id}`, { role: 'admin', method: 'DELETE' })
             .then(() => loadAllData())
-            .catch(handleAuthError);
-    };
+            .catch(handleAuthError),
+    });
 
     // --- ÜRÜN İŞLEMLERİ ---
     const addProduct = async (e) => {
         e.preventDefault();
 
         if (!newProduct.category_id || !newProduct.name || !newProduct.price) {
-            alert("Lütfen tüm alanları (Kategori, Ürün Adı, Fiyat) doldurun!");
+            toast.warn("Lütfen tüm alanları (Kategori, Ürün Adı, Fiyat) doldurun!");
             return;
         }
 
@@ -166,7 +196,7 @@ function Admin() {
 
         if (imageFile) {
             if (!IMGBB_API_KEY) {
-                alert("Görsel yüklemek için .env dosyasına VITE_IMGBB_API_KEY değerini ekleyin.");
+                toast.warn("Görsel yüklemek için .env dosyasına VITE_IMGBB_API_KEY değerini ekleyin.");
                 return;
             }
 
@@ -183,12 +213,12 @@ function Admin() {
                 if (result.success) {
                     imageUrl = result.data.url;
                 } else {
-                    alert("Resim buluta yüklenemedi!");
+                    toast.error("Resim buluta yüklenemedi!");
                     return;
                 }
             } catch (error) {
                 console.error("Bulut yükleme hatası:", error);
-                alert("Resim yükleme servisine ulaşılamadı.");
+                toast.error("Resim yükleme servisine ulaşılamadı.");
                 return;
             }
         }
@@ -205,27 +235,28 @@ function Admin() {
         })
             .then(res => {
                 if (res.success) {
-                    alert(res.message);
+                    toast.ok(res.message);
                     setNewProduct({ category_id: '', name: '', price: '' });
                     setImageFile(null);
                     const fileInput = document.getElementById('productImageInput');
                     if (fileInput) fileInput.value = '';
                     loadAllData();
                 } else {
-                    alert("⚠️ Hata: " + (res.message || "Ekleme başarısız."));
+                    toast.error(res.message || "Ekleme başarısız.");
                 }
             })
             .catch(err => {
-                if (!handleAuthError(err)) alert("Sunucu bağlantı hatası!");
+                if (!handleAuthError(err)) toast.error("Sunucu bağlantı hatası!");
             });
     };
 
-    const deleteProduct = (id) => {
-        if (!window.confirm("Ürünü silmek istediğinize emin misiniz?")) return;
-        apiFetch(`/api/admin/products/${id}`, { role: 'admin', method: 'DELETE' })
+    const deleteProduct = (product) => askConfirm({
+        title: 'Ürünü sil',
+        body: <><b>{product.name}</b> menüden kalkacak. Açık ve geçmiş adisyonlar etkilenmez (fiyat satış anında saklanıyor).</>,
+        onConfirm: () => apiFetch(`/api/admin/products/${product.id}`, { role: 'admin', method: 'DELETE' })
             .then(() => loadAllData())
-            .catch(handleAuthError);
-    };
+            .catch(handleAuthError),
+    });
 
     if (!isAdminLoggedIn) {
         return (
@@ -255,31 +286,42 @@ function Admin() {
 
     return (
         <div className="page">
-            <div className="panel reveal">
-
-                <div className="panel-head">
-                    <div className="panel-head-left">
-                        <div className="panel-icon"><IconShield size={22} sw={1.5} /></div>
-                        <div>
-                            <div className="panel-title">Yönetici Kontrol Paneli</div>
-                            <div className="panel-sub">Garson · Masa · Menü yönetimi</div>
-                        </div>
+            <div ref={navRef} className={`app-nav${scrolled ? ' is-collapsed' : ''}`}>
+                <div className="app-nav-row">
+                    <div className="app-nav-main">
+                        <div className="app-nav-title">Yönetim</div>
+                        <div className="app-nav-sub">Garson · Masa · Menü</div>
                     </div>
-                    <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={14} />Çıkış</button>
+                    <div className="app-nav-actions">
+                        <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={ICON.xs} />Çıkış</button>
+                    </div>
                 </div>
 
                 {/* SEKMELER */}
                 <div className="tabs">
-                    <button onClick={() => setActiveTab('waiters')} className={`tab ${activeTab === 'waiters' ? 'active' : ''}`}>Garson Yönetimi</button>
-                    <button onClick={() => setActiveTab('tables')} className={`tab ${activeTab === 'tables' ? 'active' : ''}`}>Masa Yönetimi</button>
+                    <button onClick={() => setActiveTab('waiters')} className={`tab ${activeTab === 'waiters' ? 'active' : ''}`}>Garson</button>
+                    <button onClick={() => setActiveTab('tables')} className={`tab ${activeTab === 'tables' ? 'active' : ''}`}>Masa</button>
                     <button onClick={() => setActiveTab('menu')} className={`tab ${activeTab === 'menu' ? 'active' : ''}`}>Menü & Kategori</button>
                 </div>
+            </div>
+            <div ref={sentinelRef} className="menu-sentinel" aria-hidden="true" />
 
-                <div className="panel-body">
+            {/* Sekmeler eş düzeyde: kayma değil, 150ms cross-fade. Yön veren
+                bir hareket burada yanlış olurdu — hiçbiri diğerinin "altında"
+                ya da "yanında" değil. */}
+            <div className="panel-body">
+                <AnimatePresence mode="wait" initial={false}>
+                    <m.div
+                        key={activeTab}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={fadeOut}
+                    >
 
                     {/* SEKME 1: GARSON YÖNETİMİ */}
                     {activeTab === 'waiters' && (
-                        <div className="reveal">
+                        <div>
                             <form onSubmit={addWaiter} className="form-box">
                                 <label className="field">
                                     <span className="label">Ad Soyad</span>
@@ -304,7 +346,7 @@ function Admin() {
                                             <div className="staff-name">{w.name}</div>
                                             <div className="staff-user">@{w.username}</div>
                                         </div>
-                                        <button onClick={() => deleteWaiter(w.id)} className="btn btn-danger btn-sm"><IconTrash size={13} />Sil</button>
+                                        <button onClick={() => deleteWaiter(w)} className="btn btn-danger btn-sm"><IconTrash size={13} />Sil</button>
                                     </div>
                                 ))}
                             </div>
@@ -313,7 +355,7 @@ function Admin() {
 
                     {/* SEKME 2: MASA YÖNETİMİ */}
                     {activeTab === 'tables' && (
-                        <div className="reveal">
+                        <div>
                             <form onSubmit={addTable} className="form-box">
                                 <label className="field">
                                     <span className="label">Masa Adı</span>
@@ -327,7 +369,7 @@ function Admin() {
                                     <div key={t.id} className="table-admin-card reveal" style={{ '--i': ti }}>
                                         <div className="row-between" style={{ marginBottom: 14 }}>
                                             <span className="table-name">{t.table_number}</span>
-                                            <button onClick={() => deleteTable(t.id)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
+                                            <button onClick={() => deleteTable(t)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
                                         </div>
 
                                         {/* QR önizleme, test linki ve yazdırma çıktısı */}
@@ -346,7 +388,7 @@ function Admin() {
 
                     {/* SEKME 3: MENÜ & KATEGORİ YÖNETİMİ */}
                     {activeTab === 'menu' && (
-                        <div className="reveal">
+                        <div>
                             {/* KATEGORİ EKLEME FORMU */}
                             <form onSubmit={addCategory} className="form-box" style={{ marginBottom: 14 }}>
                                 <label className="field">
@@ -393,7 +435,7 @@ function Admin() {
                                     <div key={c.id} className="cat-card reveal" style={{ '--i': ci }}>
                                         <div className="cat-head">
                                             <span className="cat-name">{c.name}</span>
-                                            <button onClick={() => deleteCategory(c.id)} className="btn btn-danger btn-sm">Kategoriyi Sil</button>
+                                            <button onClick={() => deleteCategory(c)} className="btn btn-danger btn-sm">Kategoriyi Sil</button>
                                         </div>
 
                                         <div className="cat-items">
@@ -409,7 +451,7 @@ function Admin() {
                                                     )}
                                                     <div className="item-name">{p.name}</div>
                                                     <div className="item-price">{p.price} ₺</div>
-                                                    <button onClick={() => deleteProduct(p.id)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
+                                                    <button onClick={() => deleteProduct(p)} className="btn-text-danger"><IconTrash size={13} />Sil</button>
                                                 </div>
                                             ))}
                                         </div>
@@ -419,8 +461,31 @@ function Admin() {
                         </div>
                     )}
 
-                </div>
+                    </m.div>
+                </AnimatePresence>
             </div>
+
+            {/* Silme onayı — window.confirm yerine tasarım sistemi diyaloğu */}
+            <Modal
+                open={!!confirmState}
+                onClose={() => setConfirmState(null)}
+                labelledBy="confirm-delete-title"
+                className="modal modal--dialog"
+            >
+                {confirmState && (
+                    <>
+                        <div className="confirm-icon confirm-icon--danger"><IconTrash size={ICON.xl} sw={1.6} /></div>
+                        <h3 className="confirm-title" id="confirm-delete-title">{confirmState.title}</h3>
+                        <p className="confirm-sub">{confirmState.body}</p>
+                        <div className="dialog-actions">
+                            <button onClick={() => setConfirmState(null)} className="btn flex-1">Vazgeç</button>
+                            <button onClick={runConfirm} className="btn btn-danger-solid flex-[1.4]">
+                                {confirmState.danger ? 'Hepsini Sil' : 'Sil'}
+                            </button>
+                        </div>
+                    </>
+                )}
+            </Modal>
         </div>
     );
 }

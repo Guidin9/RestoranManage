@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { apiFetch, getToken, setToken, clearToken, UnauthorizedError } from './api';
 import { IconCard, IconLogout, IconLogin, IconCloche, IconBell, IconCheck } from './icons';
+import { ICON } from './iconScale';
+import { useToast } from './useToast';
+import { useScrolled } from './useScrolled';
+import { Modal } from './Modal';
+import { fadeOut, springDefault } from './motion';
 import CashierSummary from './CashierSummary';
 
 function Cashier() {
+    const toast = useToast();
     // Oturum, kasa token'ının varlığına bağlı.
     const [isAuthenticated, setIsAuthenticated] = useState(() => !!getToken('cashier'));
 
@@ -12,12 +19,15 @@ function Cashier() {
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
 
-    // Kasa Verileri
+    // Kasa Verileri. loading true BAŞLIYOR: ilk fetch dönene kadar "açık
+    // masanız yok" yazmak yanlıştı — veri yokken boş durum gösteriliyordu.
     const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     // Görünüm: açık hesaplar mı, gün özeti dashboard mu?
     const [view, setView] = useState('orders');
+
+    const { scrolled, navRef, sentinelRef } = useScrolled(view);
 
     // Hesap kapatma onayı bekleyen sipariş (modal)
     const [closingOrder, setClosingOrder] = useState(null);
@@ -95,7 +105,7 @@ function Cashier() {
                     setIsAuthenticated(false);
                     return;
                 }
-                alert("Hesap kapatılamadı, sunucuya ulaşılamıyor.");
+                toast.error("Hesap kapatılamadı, sunucuya ulaşılamıyor.");
             });
     };
 
@@ -115,7 +125,7 @@ function Cashier() {
             })
             .catch(err => {
                 if (err instanceof UnauthorizedError) { setIsAuthenticated(false); return; }
-                alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
+                toast.error("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
             });
     };
 
@@ -126,7 +136,7 @@ function Cashier() {
             })
             .catch(err => {
                 if (err instanceof UnauthorizedError) { setIsAuthenticated(false); return; }
-                alert("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
+                toast.error("Servis işaretlenemedi, sunucuya ulaşılamıyor.");
             });
     };
 
@@ -174,19 +184,16 @@ function Cashier() {
     // 🟢 EĞER GİRİŞ YAPILDIYSA: KASA PANELİNİ GÖSTER
     return (
         <div className="page">
-            <div className="panel reveal">
+            <div ref={navRef} className={`app-nav${scrolled ? ' is-collapsed' : ''}`}>
 
-                <div className="panel-head">
-                    <div className="panel-head-left">
-                        <div className="panel-icon"><IconCard size={22} sw={1.5} /></div>
-                        <div>
-                            <div className="panel-title">Kasa & Mutfak Paneli</div>
-                            <div className="panel-sub">Açık hesaplar canlı izleniyor</div>
-                        </div>
+                <div className="app-nav-row">
+                    <div className="app-nav-main">
+                        <div className="app-nav-title">Kasa</div>
+                        <div className="app-nav-sub">Açık hesaplar canlı izleniyor</div>
                     </div>
-                    <div className="panel-actions">
-                        {view === 'orders' && <span className="badge-live"><span className="dot-live" />Canlı Takip</span>}
-                        <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={14} />Çıkış</button>
+                    <div className="app-nav-actions">
+                        {view === 'orders' && <span className="badge-live"><span className="dot-live" />Canlı</span>}
+                        <button onClick={handleLogout} className="btn btn-logout btn-sm"><IconLogout size={ICON.xs} />Çıkış</button>
                     </div>
                 </div>
 
@@ -195,29 +202,66 @@ function Cashier() {
                     <button onClick={() => setView('orders')} className={`tab ${view === 'orders' ? 'active' : ''}`}>Açık Hesaplar</button>
                     <button onClick={() => setView('summary')} className={`tab ${view === 'summary' ? 'active' : ''}`}>Gün Özeti</button>
                 </div>
+            </div>
+            <div ref={sentinelRef} className="menu-sentinel" aria-hidden="true" />
 
-                <div className="panel-body">
-                    {view === 'summary' ? (
-                        <CashierSummary onAuthError={handleSummaryAuthError} />
-                    ) : orders.length === 0 ? (
-                        <div className="empty">
-                            <div className="empty-icon"><IconCloche size={30} /></div>
-                            <h3>Şu an açık masanız yok</h3>
-                            <p>Yeni siparişler geldikçe burada listelenecek.</p>
-                        </div>
-                    ) : (
-                        <>
+            <div className="panel-body">
+                {view === 'summary' ? (
+                    <CashierSummary onAuthError={handleSummaryAuthError} />
+                ) : loading ? (
+                    <div className="grid grid-cards" aria-hidden="true">
+                        {[0, 1].map((i) => (
+                            <div key={i} className="order-card">
+                                <div className="order-head"><span className="skel w-24 h-5" /></div>
+                                <ul className="order-lines">
+                                    {[0, 1, 2].map((j) => (
+                                        <li key={j} className="order-line"><span className="skel skel-line" /></li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                ) : orders.length === 0 ? (
+                    <div className="empty">
+                        <div className="empty-icon"><IconCloche size={30} /></div>
+                        <h3>Şu an açık masanız yok</h3>
+                        <p>Yeni siparişler geldikçe burada listelenecek.</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Durum bildiren uyarı: hiç hareket etmeden belirmesi
+                            gözden kaçıyordu. Giriş ve çıkış aynı yoldan
+                            (yukarıdan), böylece kaybolması da kendini haber eder. */}
+                        <AnimatePresence initial={false}>
                             {readyOrderCount > 0 && (
-                                <div className="alert-banner">
-                                    <IconBell size={17} />
+                                <m.div
+                                    className="alert-banner"
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -6 }}
+                                    transition={{ opacity: fadeOut, y: springDefault }}
+                                >
+                                    <IconBell size={ICON.md} />
                                     <span><b>{readyOrderCount} masada</b> servis bekleyen sipariş var</span>
-                                </div>
+                                </m.div>
                             )}
-                            <div className="grid grid-cards">
-                                {orders.map((order, oi) => {
+                        </AnimatePresence>
+                        {/* 5sn'lik poll listeyi baştan yazıyor: ödenen kart yok
+                            olmak yerine animasyonla çıksın, kalanlar yerine
+                            ışınlanmasın. */}
+                        <div className="grid grid-cards">
+                            <AnimatePresence initial={false}>
+                                {orders.map((order) => {
                                     const ready = orderReadyCount(order.items);
                                     return (
-                                        <div key={order.id} className={`order-card reveal ${ready > 0 ? 'order-card--pending' : ''}`} style={{ '--i': oi }}>
+                                        <m.div
+                                            key={order.id}
+                                            className={`order-card ${ready > 0 ? 'order-card--pending' : ''}`}
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.97 }}
+                                            transition={{ opacity: fadeOut, y: springDefault, scale: springDefault }}
+                                        >
                                             <div className="order-head">
                                                 <span className="order-table">
                                                     {order.table?.table_number || `Masa ID: ${order.table_id}`}
@@ -239,7 +283,7 @@ function Cashier() {
                                                         {item.stage === 'preparing' ? (
                                                             <span className="status-tag status-tag--wait">Hazırlanıyor</span>
                                                         ) : item.stage === 'ready' ? (
-                                                            <button onClick={() => handleServeItem(item.id)} className="btn btn-success btn-sm"><IconCheck size={12} />Servis Et</button>
+                                                            <button onClick={() => handleServeItem(item.id)} className="btn btn-success btn-sm"><IconCheck size={ICON.xs} />Servis Et</button>
                                                         ) : null}
                                                         <span className="order-line-price">{(item.price_at_sale * item.quantity).toFixed(2)} ₺</span>
                                                     </li>
@@ -252,37 +296,44 @@ function Cashier() {
                                             </div>
                                             {ready > 0 && (
                                                 <button onClick={() => handleServeAll(order.id)} className="order-deliver">
-                                                    <IconCheck size={16} />Tümünü Servis Et ({ready} ürün)
+                                                    <IconCheck size={ICON.sm} />Tümünü Servis Et ({ready} ürün)
                                                 </button>
                                             )}
                                             <button onClick={() => setClosingOrder(order)} className="order-pay">
-                                                <IconCard size={16} />Hesabı Kapat / Öde
+                                                <IconCard size={ICON.sm} />Hesabı Kapat / Öde
                                             </button>
-                                        </div>
+                                        </m.div>
                                     );
                                 })}
-                            </div>
-                        </>
-                    )}
-                </div>
+                            </AnimatePresence>
+                        </div>
+                    </>
+                )}
             </div>
 
-            {/* HESAP KAPATMA ONAY MODALI */}
-            {closingOrder && (
-                <div className="modal-overlay" onClick={() => setClosingOrder(null)}>
-                    <div className="modal modal--dialog" onClick={e => e.stopPropagation()}>
-                        <div className="confirm-icon confirm-icon--soft"><IconCard size={28} sw={1.6} /></div>
-                        <h3 className="confirm-title">Hesabı kapat</h3>
+            {/* HESAP KAPATMA ONAY MODALI — el yapımı overlay yerine <Modal>:
+                Escape, odak tuzağı, odağı geri verme, iOS-güvenli kaydırma
+                kilidi ve çıkış animasyonu oradan geliyor (ASAMA-2 P1). */}
+            <Modal
+                open={!!closingOrder}
+                onClose={() => setClosingOrder(null)}
+                labelledBy="pay-title"
+                className="modal modal--dialog"
+            >
+                {closingOrder && (
+                    <>
+                        <div className="confirm-icon confirm-icon--soft"><IconCard size={ICON.xl} sw={1.6} /></div>
+                        <h3 className="confirm-title" id="pay-title">Hesabı kapat</h3>
                         <p className="confirm-sub">
                             {closingOrder.table?.table_number || `Masa ID: ${closingOrder.table_id}`} · <b>{calculateOrderTotal(closingOrder.items)} ₺</b> tahsil edilecek ve masa boşaltılacak.
                         </p>
-                        <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-                            <button onClick={() => setClosingOrder(null)} className="btn" style={{ flex: 1 }}>Vazgeç</button>
-                            <button onClick={() => handlePayOrder(closingOrder.id)} className="btn btn-success" style={{ flex: 1.4 }}>Öde & Kapat</button>
+                        <div className="dialog-actions">
+                            <button onClick={() => setClosingOrder(null)} className="btn flex-1">Vazgeç</button>
+                            <button onClick={() => handlePayOrder(closingOrder.id)} className="btn btn-success flex-[1.4]">Öde & Kapat</button>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
+            </Modal>
         </div>
     );
 }

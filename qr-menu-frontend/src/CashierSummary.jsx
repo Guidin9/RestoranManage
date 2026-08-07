@@ -31,19 +31,13 @@ const barTop = (x, y, w, h, r) => {
     return `M${x},${y + h} L${x},${y + rr} Q${x},${y} ${x + rr},${y} L${x + w - rr},${y} Q${x + w},${y} ${x + w},${y + rr} L${x + w},${y + h} Z`;
 };
 
-// Tema renkleri (SVG presentation attribute'ları var() çözmediği için sabit).
-// Kor paletinin AÇIK tema değerleri; :root'takilerle elle eşlenmiş.
-//
-// BİLİNEN EKSİK: bunlar sabit olduğu için grafikler karanlık modu takip
-// etmiyor. Doğrusu presentation attribute yerine CSS property kullanmak
-// (SVG'de fill bir CSS property'sidir ve var() çözer) — bkz. ASAMA-2.md P6.
-const C_SEA = '#c2410c';        // aksan: ciro trendi
-const C_OLIVE = '#15803d';      // onay tonu: çok satanlar
-const C_INK = '#1c1917';
-const C_DIM = 'rgba(28,25,23,0.58)';
-const C_FAINT = 'rgba(28,25,23,0.42)';
-const C_LINE = 'rgba(28,25,23,0.1)';
-const FONT = "'Inter', system-ui, sans-serif";
+/* Grafik renkleri artık BURADA DEĞİL, index.css'te @layer components içinde
+   (.chart-axis / .chart-label / .chart-bar / .chart-tick).
+
+   Eski yorum yarı doğruydu: SVG **presentation attribute**'ları (fill="…")
+   var() çözmez — ama fill/stroke SVG'de aynı zamanda birer **CSS
+   property**'sidir ve CSS'ten yazıldığında var() gayet çözülür. Sabit hex
+   tutmanın tek sonucu grafiklerin karanlık modu takip etmemesiydi. */
 
 // --- Son 14 gün ciro trendi (dikey çubuk) --------------------------------
 function TrendChart({ trend }) {
@@ -60,8 +54,8 @@ function TrendChart({ trend }) {
         <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="auto" role="img"
             aria-label="Son 14 günün günlük ciro trendi">
             {/* üst referans çizgisi + max etiketi */}
-            <line x1={padL} y1={padT} x2={W - padR} y2={padT} stroke={C_LINE} strokeWidth="1" />
-            <text x={padL} y={padT - 8} fontSize="11" fill={C_DIM} fontFamily={FONT}>{moneyShort(max)}</text>
+            <line x1={padL} y1={padT} x2={W - padR} y2={padT} className="chart-axis" strokeWidth="1" />
+            <text x={padL} y={padT - 8} fontSize="11" className="chart-label">{moneyShort(max)}</text>
 
             {trend.map((t, i) => {
                 const h = (t.revenue / max) * plotH;
@@ -70,13 +64,14 @@ function TrendChart({ trend }) {
                 const isSel = i === selectedIdx;
                 return (
                     <g key={t.date}>
+                        {/* Tek ton, tek iş: ciro hep --accent. Seçili gün ikinci
+                            bir renkle değil, tam opaklıkla ayrışıyor. */}
                         <path d={barTop(x, y, barW, Math.max(h, 0.5), 4)}
-                            fill={isSel ? C_OLIVE : C_SEA}>
+                            className={`chart-bar${isSel ? ' is-sel' : ''}`}>
                             <title>{longDay(t.date)} — {money(t.revenue)} · {num(t.tables)} masa</title>
                         </path>
                         <text x={x + barW / 2} y={baseY + 14} fontSize="9.5" textAnchor="middle"
-                            fill={isSel ? C_INK : C_FAINT}
-                            fontFamily={FONT} fontWeight={isSel ? 700 : 400}>{shortDay(t.date)}</text>
+                            className={`chart-tick${isSel ? ' is-sel' : ''}`}>{shortDay(t.date)}</text>
                     </g>
                 );
             })}
