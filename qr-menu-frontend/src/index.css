@@ -452,13 +452,19 @@
 }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* Dolu butonların gölgesi NÖTR, rengin kendisi DEĞİL.
+
+   Eskiden gölge butonun renginden türetiliyordu (%60-80 opaklıkta) ve
+   çevresine renkli bir hale yayıyordu. Renkli hale kenarın nerede bittiğini
+   belirsizleştiriyor: buton odaklanılamıyormuş gibi, gözlük numarası yanlış
+   gibi okunuyor. Gerçek gölge nesnenin rengini almaz, ışığı keser. */
 .btn-primary {
   background: var(--accent); color: #fff; border-color: transparent;
-  box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: var(--shadow-card);
 }
 .btn-success {
   background: var(--ok); color: #fff; border-color: transparent;
-  box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--ok) 80%, transparent);
+  box-shadow: var(--shadow-card);
 }
 
 /* Silme eylemleri konturlu, hover'da dolar */
@@ -470,7 +476,7 @@
    zaten bilerek geldi, eylem net görünsün. */
 .btn-danger-solid {
   background: var(--danger); color: #fff; border-color: transparent;
-  box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--danger) 60%, transparent);
+  box-shadow: var(--shadow-card);
 }
 
 .btn-ink { background: var(--ink); color: var(--paper); border-color: transparent; }
