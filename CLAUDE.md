@@ -159,24 +159,26 @@ Cashier ("Açık Hesaplar"), Waiter, and Kitchen poll their endpoints on a 3–5
 - **QR codes point at `window.location.origin`**, so they're only correct when generated from the domain customers will actually scan into.
 - **Never run `docker compose down -v` on the server** — that deletes the `restoranmanage_db_data` volume, i.e. the real production data.
 
-## Styling — "Mavi Liman" design system
+## Styling — "Kor" design system
 
-All four screens share **one central stylesheet, `src/index.css`** (Mediterranean theme, light +
-dark), with Tailwind v4 as a hybrid layer on top and `motion` for gesture-driven motion. **The full
-design-system rules — tokens, dark mode, the Tailwind v4 `@layer` contract, class conventions,
-charts, animation, the drag gesture — live in `qr-menu-frontend/CLAUDE.md`**, which loads
-automatically when working under that directory.
+All five screens share **one central stylesheet, `src/index.css`** (light + dark), with Tailwind v4
+as a hybrid layer on top and `motion` for gesture-driven motion. **The full design-system rules —
+tokens, dark mode, the shell, the Tailwind v4 `@layer` contract, class conventions, charts,
+animation, the drag gesture — live in `qr-menu-frontend/CLAUDE.md`**, which loads automatically
+when working under that directory.
 
-**Layout and density are settled — don't "modernize" them unprompted.** A 2026-07-17 customer-menu
-redesign was built, deployed, and rejected; those visual changes were reverted. A 2026-08-06 pass
-(explicitly requested) applied Apple-style mechanics — springs, materials, type scale, 44px hit
-areas, dark mode — while keeping that layout and density intact. Restyling still needs an explicit
-request. Rationale and the do-not list: `qr-menu-frontend/CLAUDE.md`.
+In one paragraph: warm charcoal + burnt orange on cream, **one font family (Inter)**, no decorative
+serif. Every screen is a sticky glass `.app-nav` over grouped surfaces with hairline-separated
+rows; there is no card wrapping a whole screen. **Colour tokens are named for their role**
+(`--accent`, `--ok`, `--warn`, `--danger`) — never for a hue.
 
-**That redesign is half-delivered.** Stage 1 (foundation + customer menu) is live; Stage 2 (Waiter,
-Cashier, Kitchen, Admin) is not started. **`ASAMA-2.md` at the repo root is the handoff note** —
-read it before touching those screens; it has the remaining work with file:line targets and the
-traps already paid for, so no re-exploration is needed.
+**This landed 2026-08-07 and replaced the earlier "Mavi Liman" Mediterranean theme**, which the
+user rejected as looking AI-generated, along with its Marcellus + Hanken Grotesk pairing. The
+customer menu, the palette/font, and then all four staff screens were each built, deployed and
+approved in turn. Restyling still needs an explicit request and should land in its own commit.
+
+`ASAMA-2.md` (the Stage-2 handoff note) is **done and deleted** — all six of its patterns shipped
+with the staff-screen migration.
 
 ## Default credentials
 

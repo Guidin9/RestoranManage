@@ -1,17 +1,51 @@
-# Styling — "Mavi Liman" design system
+# Styling — "Kor" design system
 
-All four screens share **one central stylesheet, `src/index.css`**, a light-only Mediterranean
-("Mavi Liman") theme imported from Claude Design. Screens are styled with `className`, not inline
-`style` objects; keep inline `style` only for one-off layout (spacing, grid template), never for
-colors or surfaces. Icons are inline SVG from `src/icons.jsx` (no emoji in the product UI).
+All five screens share **one central stylesheet, `src/index.css`** (light + dark). Screens are
+styled with `className`, not inline `style` objects; keep inline `style` only for one-off layout
+(spacing, grid template), never for colors or surfaces. Icons are inline SVG from `src/icons.jsx`
+(no emoji in the product UI).
 
-**Fonts:** `--serif` = **Marcellus** (headings, table/panel titles, big numbers), `--sans` =
-**Hanken Grotesk** (body).
+**Palette (2026-08-07):** warm charcoal + burnt orange. Cream surfaces (`--paper` `#FFFBF5`),
+charcoal ink (`--ink` `#1C1917`), one saturated accent (`--accent` `#C2410C`). Green/amber/red are
+**semantic only** — `--ok` confirms, `--warn` warns, `--danger` destroys. No decorative colour.
+The previous "Mavi Liman" Mediterranean palette (sage/sea-blue/terracotta) was rejected by the user
+as looking AI-generated; don't reintroduce it.
+
+**Token names are roles, not hues** — `--accent`, `--ok`, `--danger`, not `--sea`/`--olive`/
+`--terra`. When the palette next changes, only the values in `:root` move; no rule cares whether
+`--accent` is orange. Keep it that way.
+
+**Font: one family, Inter** (variable, `opsz` + `wght 400..800`, `font-optical-sizing: auto`).
+There is **no `--serif`** and no `--font-serif` bridge — hierarchy comes from weight and size
+alone. The old Marcellus display face was dropped with the palette.
 
 **Design tokens** live in `:root` in `index.css` (ink/text, accents, surfaces, radii, easings,
-tracking/leading). Don't hardcode hex — use the tokens. Two sanctioned exceptions:
-`CashierSummary.jsx`'s SVG charts (SVG presentation attributes don't resolve `var()`), and
-`.qr-thumb`'s `#fff` (a QR code needs a white quiet zone to scan, in both themes).
+tracking/leading). Don't hardcode hex — use the tokens. One sanctioned exception: `.qr-thumb`'s
+`#fff` (a QR code needs a white quiet zone to scan, in both themes). Note that
+`CashierSummary.jsx`'s charts are **no longer** an exception — `fill`/`stroke` are CSS properties
+in SVG and resolve `var()` when written from CSS, so the chart classes live in `@layer components`
+(`.chart-bar`, `.chart-axis`, `.chart-tick`, `.chart-label`) and follow dark mode for free.
+
+## The shell: `.app-nav` + grouped surfaces
+
+Every screen is `.page`/`.menu-page` → sticky glass `.app-nav` → content sections. There is **no
+card wrapping a whole screen** (the old dark-gradient `.panel` shell is gone); the cards are the
+data. The nav's material and hairline appear only once content scrolls under it — a scroll edge
+effect driven by `useScrolled.js` (IntersectionObserver, no scroll listener).
+
+`.app-nav-title` is visible by default. The customer menu adds `.app-nav--reveal` to opt into
+Apple's large-title handoff (title hidden until the big `<h1>` scrolls under the bar); staff
+screens don't, because they are tools with no vertical budget for a display title.
+
+Surfaces that use the glass material (`--glass` + `blur(10px)` + `--glass-edge`/`--glass-top` +
+`--shadow-inset, --shadow-card`): `.group-card`, `.order-card`, `.kpi`, `.chart-card`, `.cat-card`,
+`.form-box`, `.table-admin-card`, `.staff-row`. **Adding another means adding it to the
+`prefers-reduced-transparency` and `prefers-contrast` blocks too** — a surface left out of those
+stays glass when the user asked for solid, and sticks out.
+
+Lists separate rows with a hairline pseudo-element (`.menu-row + .menu-row::before`,
+`.order-line + .order-line::before`, `.tab-item + .tab-item::before`), inset from the left to start
+at the text edge — not with gaps and not with per-row borders.
 
 ## Dark mode — three unlayered `:root` blocks
 
@@ -29,9 +63,11 @@ Two rules that are easy to get wrong:
 
 - **Chrome must stay lighter than the page in dark mode.** `--deep-grad` and `--glass-deep` are
   elevated surfaces; if they go darker than the page they recede and text bleeds through the glass.
-- **`--sea-deep` / `--olive-deep` are hover fills only.** As *text on a tint* they'd need to move
+- **`--accent-deep` / `--ok-deep` are hover fills only.** As *text on a tint* they'd need to move
   the opposite way in dark, which is why the `--tint-*` / `--tint-*-ink` pairs exist. Use those for
   status tags, badges and banners.
+- **`--warn` leans yellow on purpose.** With an orange `--accent`, an amber warn was too close to
+  read apart — "Hazırlanıyor" and "Servise hazır" looked like the same tag.
 
 Token families added for this: `--page-grad`, `--line-hair`/`--line-soft`, `--ink-lift`,
 `--placeholder`, four `--tint-*` + `-ink` pairs, `--glass`/`--glass-edge`/`--glass-top`/
@@ -54,26 +90,31 @@ Tailwind is wired up via `@tailwindcss/vite` (**not** PostCSS — there is no `p
 and no other PostCSS plugin; `postcss`/`autoprefixer` were removed and Lightning CSS handles
 prefixing). `index.css` starts with `@import 'tailwindcss'`. The rules that matter:
 
-- **Split rule.** A *named design object* used in 2+ places (`.btn`, `.panel`, `.prod-card`)
+- **Split rule.** A *named design object* used in 2+ places (`.btn`, `.group-card`, `.order-card`)
   stays as CSS in `@layer components`. *One-off layout/spacing* is a utility in JSX
   (`mt-5`, `flex-1`, `text-center`). Don't expand `.btn` into utilities at 6 call sites —
   that's how variant drift starts.
 - **Every rule in `index.css` must live inside a `@layer`.** Unlayered CSS beats *all* layered
-  CSS including `utilities`, so a rule left outside silently kills `className="prod-card mb-3"`.
+  CSS including `utilities`, so a rule left outside silently kills `className="group-card mb-3"`.
   `@layer base` holds element/global rules (`html`, `body`, headings, `::-webkit-scrollbar`,
   `prefers-reduced-motion`); everything else is `@layer components`. Preflight covers
   `box-sizing`, so don't re-add it.
 - **`:root` is the single source of truth and is deliberately unlayered** — that's what makes it
   beat Tailwind's own `@layer theme` defaults (`rounded-md` → 16px, `ease-out` → our curve).
-- **`@theme inline` bridges tokens to Tailwind's namespace** (`--color-sea: var(--sea)`), so
-  `bg-sea` resolves straight to `var(--sea)` and **no separate `--color-sea` is ever emitted**.
+- **`@theme inline` bridges tokens to Tailwind's namespace** (`--color-accent: var(--accent)`), so
+  `bg-accent` resolves straight to `var(--accent)` and **no separate `--color-accent` is emitted**.
   Change a value only in `:root`. Adding a color = a `:root` token + one bridge line.
 - **The palette is locked**: `@theme { --color-*: initial }` strips Tailwind's 22 built-in
   ramps, so `bg-blue-500` **won't compile**. Only `white`/`black` were kept.
 - **`@keyframes` are outside layers** (keyframes aren't scoped by them). Our pulse is named
-  **`ml-pulse`** because Tailwind reserves `pulse` via `--animate-pulse` with a different curve.
+  **`kor-pulse`** because Tailwind reserves `pulse` via `--animate-pulse` with a different curve.
 - **`.reveal` + `style={{'--i': index}}` stays as-is** — `calc(var(--i,0) * 55ms)` is the one
   legitimate remaining inline `style`.
+- **Scanning is pinned to `src/` with `@source`.** `index.css` opens with
+  `@import 'tailwindcss' source(none)` plus explicit `@source '../index.html'` and
+  `@source './**/*.{js,jsx}'`. Without the pin, Tailwind scanned the repo root and generated real
+  utilities from class names *mentioned in the CLAUDE.md files*. Paths resolve relative to the CSS
+  file, not the project root.
 - **Fonts load via `<link>` in `index.html`.** Don't move them back into `index.css`:
   `@import 'tailwindcss'` expands inline, which would push a font `@import` behind real rules
   and CSS spec drops it silently (fonts fall back to system).
@@ -82,27 +123,31 @@ prefixing). `index.css` starts with `@import 'tailwindcss'`. The rules that matt
 
 ## Charts
 
-**Charts (`CashierSummary.jsx`)** are hand-rolled inline SVG, single-hue by data job (sea for the
-revenue trend, olive for top-products), no chart library. Follow the `dataviz` skill: thin marks,
-rounded data-ends, direct value labels, recessive axes, `<title>` hover, `prefers-reduced-motion`
-respected.
+**Charts (`CashierSummary.jsx`)** are hand-rolled inline SVG, no chart library, coloured from CSS
+classes so dark mode follows for free. **Single hue per data job:** the revenue trend is all
+`--accent`, and the selected day is separated by *opacity* (`.chart-bar` 0.55 → `.is-sel` 1),
+not by a second colour. Follow the `dataviz` skill: thin marks, rounded data-ends, direct value
+labels, recessive axes, `<title>` hover, `prefers-reduced-motion` respected.
 
-## Layout and density are settled — don't "modernize" them unprompted
+## Layout history — what was rejected, and what is current
 
-A 2026-07-17 redesign of the customer menu (Marcellus category headings, one surface per category,
-40px tap targets, collapsible cart) was built, deployed, and **rejected**: the user preferred the
-existing layout. Tailwind was kept, the visual changes were reverted (`git revert 9c2f6b0`).
+A 2026-07-17 redesign of the customer menu was built, deployed and **rejected**; the visual changes
+were reverted (`git revert 9c2f6b0`). A 2026-08-06 pass then applied Apple's *mechanics* — springs,
+materials, type scale, 44px hit areas, dark mode — keeping the then-current layout.
 
-A 2026-08-06 pass (explicitly requested) then applied Apple's *mechanics* — springs, materials,
-type scale, 44px hit areas, dark mode — while **deliberately keeping that layout and density**.
-The ergonomic wins from the reverted commit were re-landed; its layout changes were not. So:
+**2026-08-07 supersedes both, at the user's explicit request.** The customer menu moved to an
+iOS inset-grouped list (sticky glass nav + horizontal category strip + one surface per category
+with hairline rows), then the palette and font changed ("Kor"), then all four staff screens moved
+to the same language. The user reviewed and approved each step. So the old do-not list is void:
+`.cat-title`, `.prod-card`, `.menu-arch` and the dark `.panel` shell no longer exist.
 
-- ❌ `.cat-title` stays 13px bold Hanken. No Marcellus, no bottom rule.
-- ❌ No per-category shared surface. `.prod-card` keeps its own background, blur, border, shadow.
+What still holds:
+
 - ❌ **The cart bar is never a hidden "peek".** `CartSheet` mounts fully expanded — bag row, line
   list, total, CTA. The drag gesture is purely additive.
-- ❌ Don't change `.menu-page` max-width, card padding/gap/margins.
 - ✅ Hit areas grow via transparent `::after` pseudo-elements, so 44px targets cost no density.
+- ✅ Staff screens are **tools**: compact nav, no large display title, information density over
+  breathing room. The customer menu is the one screen that gets a large title.
 
 Restyling still needs an explicit request, and should land in its own commit.
 
@@ -111,7 +156,7 @@ Restyling still needs an explicit request, and should land in its own commit.
 Two systems, deliberately split:
 
 **CSS** owns mount-only motion with no exit and nothing to interrupt: `.reveal` +
-`style={{ '--i': index }}`, `ml-pulse` dots, `.spinner`, `.alert` shake, page `fade-in`,
+`style={{ '--i': index }}`, `kor-pulse` dots, `.spinner`, `.alert` shake, page `fade-in`,
 `.login-card` `pop-in`, `.pbar-fill` width. Keyframes live outside layers; the
 `prefers-reduced-motion` block in `@layer base` disables them.
 
@@ -149,6 +194,11 @@ Two hazards worth remembering, both found the hard way:
 - **`.cart-lines` hides its scrollbar on purpose.** A visible scrollbar narrows the content, wraps
   a product name, changes the measured height, re-snaps, and hides the scrollbar again — a
   `ResizeObserver` feedback loop that freezes the page.
+
+**Still unverified:** the cart drag has never been tried with a thumb on a real phone. Its physics
+are covered by deterministic tests (`npm run test:motion`, 18 checks), the code has been reviewed,
+and there is a `pointer-events: none` safety on exit — but *feel* is not something a test asserts.
+If you get the chance, confirm it on hardware before changing anything in `useDragSheet.js`.
 
 ## Preserve logic when restyling
 

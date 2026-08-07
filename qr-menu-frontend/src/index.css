@@ -343,7 +343,7 @@
    ========================================================================= */
 
 .menu-brand, .kpi-value                                     { letter-spacing: var(--track-display); }
-.panel-title, .modal-title, .confirm-title, .table-name,
+.modal-title, .confirm-title, .table-name,
 .order-table, .empty h3, .tab-total-value, .login-head h2   { letter-spacing: var(--track-title); }
 .row-name, .app-nav-title, .cat-name, .ctx-title,
 .item-name, .item-price, .order-total-value, .cart-total    { letter-spacing: var(--track-heading); }
@@ -405,14 +405,8 @@
    saran bir kart YOK; kart olan şey verinin kendisi.
    ========================================================================= */
 
-.panel-icon {
-  width: 34px; height: 34px;
-  border-radius: 10px;
-  background: var(--tint-accent);
-  color: var(--tint-accent-ink);
-  display: flex; align-items: center; justify-content: center;
-  flex: none;
-}
+/* Ekran gövdesi. Üst boşluk yapışkan kabuktan sonra gelir; yan padding
+   sayfanın kendisinde (.page), böylece ızgaralar kenara kadar uzanır. */
 .panel-body { padding: 20px 0 0; }
 
 /* Canlı takip rozeti — artık açık cam kabuğun üstünde duruyor,
