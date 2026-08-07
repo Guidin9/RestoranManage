@@ -33,7 +33,8 @@ Docker ile yayında, HTTPS çalışıyor (Caddy + Let's Encrypt). Son güncellem
 **Yarım / bekleyen**
 - Menü içeriği boş: masa, kategori ve ürünler `/admin` panelinden elle eklenecek.
 - QR kodları henüz basılmadı (adres kalıcı, hazır olunca admin panelinden basılabilir).
-- UI ince ayarı `dev` branch'inde sürüyor — iş akışı `qr-menu-frontend/TASARIM.md`.
+- UI çalışması doğrudan `main` üzerinde ilerliyor — tasarım sistemi kuralları
+  `qr-menu-frontend/CLAUDE.md`'de.
 
 ## Ekranlar
 
