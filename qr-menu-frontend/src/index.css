@@ -427,8 +427,8 @@
 /* Canlı takip rozeti (koyu başlık üzerinde) */
 .badge-live {
   display: inline-flex; align-items: center; gap: 7px;
-  background: rgba(111, 138, 82, 0.22);
-  border: 1px solid rgba(143, 179, 122, 0.4);
+  background: color-mix(in srgb, var(--ok) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok-light) 40%, transparent);
   border-radius: 999px;
   padding: 6px 12px;
   font: 600 11px/1 var(--sans);
@@ -466,25 +466,25 @@
 
 .btn-primary {
   background: var(--accent); color: #fff; border-color: transparent;
-  box-shadow: 0 10px 20px -8px rgba(18, 104, 138, 0.6);
+  box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 .btn-success {
   background: var(--ok); color: #fff; border-color: transparent;
-  box-shadow: 0 10px 20px -8px rgba(111, 138, 82, 0.8);
+  box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--ok) 80%, transparent);
 }
 
 /* Tasarımda silme eylemleri terakota konturlu, hover'da dolar */
 .btn-danger {
   background: transparent; color: var(--danger);
-  border-color: rgba(192, 95, 80, 0.4);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 .btn-ink { background: var(--ink); color: var(--paper); border-color: transparent; }
 
 /* Koyu panel başlığındaki çıkış butonu — her iki temada da --deep-grad üstünde */
 .btn-logout {
-  background: rgba(192, 95, 80, 0.18);
-  border-color: rgba(192, 95, 80, 0.4);
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
   color: #fca5a5;
 }
 
@@ -1658,7 +1658,7 @@ input[type='file'].input { padding: 9px 12px; cursor: pointer; font-size: 12px; 
   .btn-success:hover { background: var(--ok-deep); border-color: transparent; }
   .btn-danger:hover { background: var(--danger); color: #fff; border-color: transparent; }
   .btn-ink:hover { background: var(--ink-lift); border-color: transparent; }
-  .btn-logout:hover { background: rgba(192, 95, 80, 0.32); border-color: rgba(192, 95, 80, 0.55); }
+  .btn-logout:hover { background: color-mix(in srgb, var(--danger) 32%, transparent); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
   .btn-text-danger:hover { background: var(--tint-danger); }
   .tab:hover { color: var(--ink); }
   .qty-btn:hover { background: var(--sand); }

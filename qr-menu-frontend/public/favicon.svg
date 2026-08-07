@@ -1,12 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <!-- Mavi Liman kemer işareti — .login-arch / .menu-arch-shape motifi.
+  <!-- Kor palet işareti. Kemer motifi .login-arch'tan geliyor; müşteri
+       menüsündeki .menu-arch-shape 2026-08-07 yeniden tasarımında kalktı,
+       yani bu şekil artık yalnız giriş ekranıyla eşli.
        Tarayıcı kabuğu koyu temadayken de okunsun diye gömülü media query. -->
   <style>
-    .bg { fill: #eef2e6; }
-    .arch { stroke: #12688a; }
+    .bg { fill: #f5efe6; }
+    .arch { stroke: #c2410c; }
     @media (prefers-color-scheme: dark) {
-      .bg { fill: #122a35; }
-      .arch { stroke: #3f9dc2; }
+      .bg { fill: #14100e; }
+      .arch { stroke: #fb923c; }
     }
   </style>
   <rect class="bg" width="48" height="48" rx="11" />
